@@ -11,6 +11,7 @@ import (
 )
 
 type TxPool interface {
+	SubmitTx(tx *core.Transaction) error
 	PopTxsFromQueue(max int) [][]byte
 	SetTxsPending(hashes [][]byte)
 	GetTxsToExecute(hashes [][]byte) ([]*core.Transaction, [][]byte)
@@ -18,6 +19,7 @@ type TxPool interface {
 	PutTxsToQueue(hashes [][]byte)
 	SyncTxs(peer *core.PublicKey, hashes [][]byte) error
 	GetTx(hash []byte) *core.Transaction
+	GetTxStatus(hash []byte) txpool.TxStatus
 	GetStatus() txpool.Status
 }
 
@@ -33,14 +35,17 @@ type Storage interface {
 
 type MsgService interface {
 	BroadcastProposal(blk *core.Block) error
+	BroadcastBatch(batch *core.Batch) error
 	BroadcastNewView(qc *core.QuorumCert) error
 	SendVote(pubKey *core.PublicKey, vote *core.Vote) error
+	SendBatchVote(pubKey *core.PublicKey, vote *core.BatchVote) error
 	RequestBlock(pubKey *core.PublicKey, hash []byte) (*core.Block, error)
 	RequestBlockByHeight(pubKey *core.PublicKey, height uint64) (*core.Block, error)
 	SendNewView(pubKey *core.PublicKey, qc *core.QuorumCert) error
-
+	SubscribeBatch(buffer int) *emitter.Subscription
 	SubscribeProposal(buffer int) *emitter.Subscription
 	SubscribeVote(buffer int) *emitter.Subscription
+	SubscribeBatchVote(buffer int) *emitter.Subscription
 	SubscribeNewView(buffer int) *emitter.Subscription
 }
 

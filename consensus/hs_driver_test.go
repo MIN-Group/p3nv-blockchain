@@ -28,25 +28,18 @@ func setupTestHsDriver() *hsDriver {
 
 func TestHsDriver_TestMajorityCount(t *testing.T) {
 	hsd := setupTestHsDriver()
-	hsd.resources.VldStore = core.NewValidatorStore(
-		[]*core.PublicKey{
-			core.GenerateKey(nil).PublicKey(),
-			core.GenerateKey(nil).PublicKey(),
-			core.GenerateKey(nil).PublicKey(),
-			core.GenerateKey(nil).PublicKey(),
-		},
-		[]int{1, 2, 1, 1},
-		[]*core.PublicKey{
-			core.GenerateKey(nil).PublicKey(),
-			core.GenerateKey(nil).PublicKey(),
-			core.GenerateKey(nil).PublicKey(),
-			core.GenerateKey(nil).PublicKey(),
-		})
+	validators := []string{
+		core.GenerateKey(nil).PublicKey().String(),
+		core.GenerateKey(nil).PublicKey().String(),
+		core.GenerateKey(nil).PublicKey().String(),
+		core.GenerateKey(nil).PublicKey().String(),
+	}
+	hsd.resources.VldStore = core.NewValidatorStore(validators, []int{1, 1, 1, 1}, validators)
 
-	res := hsd.MajorityCount()
+	res := hsd.MajorityValidatorCount()
 
 	assert := assert.New(t)
-	assert.Equal(hsd.resources.VldStore.MajorityCount(), res)
+	assert.Equal(hsd.resources.VldStore.MajorityValidatorCount(), res)
 }
 
 func TestHsDriver_CreateLeaf(t *testing.T) {
@@ -56,19 +49,23 @@ func TestHsDriver_CreateLeaf(t *testing.T) {
 	qc := newHsQC(core.NewQuorumCert(), hsd.state)
 	height := uint64(5)
 
-	txsInQ := [][]byte{[]byte("tx1"), []byte("tx2")}
-	txPool := new(MockTxPool)
-	txPool.On("PopTxsFromQueue", hsd.config.BlockTxLimit).Return(txsInQ)
-	hsd.resources.TxPool = txPool
-
 	storage := new(MockStorage)
 	storage.On("GetBlockHeight").Return(2) // driver should get bexec height from storage
 	storage.On("GetMerkleRoot").Return([]byte("merkle-root"))
 	hsd.resources.Storage = storage
 
+	signer := core.GenerateKey(nil)
+	hsd.resources.VldStore = core.NewValidatorStore([]string{signer.PublicKey().String()}, []int{1}, []string{signer.PublicKey().String()})
+
+	txsInQ := [][]byte{[]byte("tx1"), []byte("tx2")}
+
+	hsd.leaderState = newLeaderState().setBatchWaitTime(3 * time.Second).setBatchSignLimit(1).setBlockBatchLimit(1)
+	batch := core.NewBatch().SetTransactions(txsInQ).Sign(signer)
+	batchVote := core.NewBatchVote().Build([]*core.Batch{batch}, signer)
+	hsd.leaderState.addBatchVote(batchVote)
+
 	leaf := hsd.CreateLeaf(parent, qc, height)
 
-	txPool.AssertExpectations(t)
 	storage.AssertExpectations(t)
 
 	assert := assert.New(t)
@@ -94,7 +91,8 @@ func TestHsDriver_VoteBlock(t *testing.T) {
 	proposer := core.GenerateKey(nil)
 	blk := core.NewBlock().Sign(proposer)
 
-	hsd.resources.VldStore = core.NewValidatorStore([]*core.PublicKey{blk.Proposer()}, []int{1}, nil)
+	validators := []string{blk.Proposer().String()}
+	hsd.resources.VldStore = core.NewValidatorStore(validators, []int{1}, validators)
 
 	txPool := new(MockTxPool)
 	txPool.On("GetStatus").Return(txpool.Status{}) // no txs in the pool
@@ -117,9 +115,9 @@ func TestHsDriver_VoteBlock(t *testing.T) {
 	assert.GreaterOrEqual(elapsed, hsd.config.TxWaitTime, "should delay if no txs in the pool")
 
 	txPool = new(MockTxPool)
-	hsd.resources.TxPool = txPool
 	txPool.On("GetStatus").Return(txpool.Status{Total: 1}) // one txs in the pool
 	txPool.On("SetTxsPending", blk.Transactions())
+	hsd.resources.TxPool = txPool
 
 	start = time.Now()
 	hsd.VoteBlock(newHsBlock(blk, hsd.state))
@@ -134,11 +132,12 @@ func TestHsDriver_VoteBlock(t *testing.T) {
 func TestHsDriver_Commit(t *testing.T) {
 	hsd := setupTestHsDriver()
 	parent := core.NewBlock().SetHeight(10).Sign(hsd.resources.Signer)
-	bfolk := core.NewBlock().SetTransactions([][]byte{[]byte("txfromfolk")}).SetHeight(10).Sign(hsd.resources.Signer)
+	batch := core.NewBatch().SetTransactions([][]byte{[]byte("txfromfolk")}).Sign(hsd.resources.Signer)
+	bfolk := core.NewBlock().SetBatchs([]*core.Batch{batch}).SetHeight(10).Sign(hsd.resources.Signer)
 
 	tx := core.NewTransaction().Sign(hsd.resources.Signer)
-	bexec := core.NewBlock().SetTransactions([][]byte{tx.Hash()}).
-		SetParentHash(parent.Hash()).SetHeight(11).Sign(hsd.resources.Signer)
+	batch2 := core.NewBatch().SetTransactions([][]byte{tx.Hash()}).Sign(hsd.resources.Signer)
+	bexec := core.NewBlock().SetBatchs([]*core.Batch{batch2}).SetParentHash(parent.Hash()).SetHeight(11).Sign(hsd.resources.Signer)
 	hsd.state.setBlock(parent)
 	hsd.state.setCommitedBlock(parent)
 	hsd.state.setBlock(bfolk)

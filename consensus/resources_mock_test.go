@@ -17,6 +17,11 @@ type MockTxPool struct {
 
 var _ TxPool = (*MockTxPool)(nil)
 
+func (m *MockTxPool) SubmitTx(tx *core.Transaction) error {
+	args := m.Called(tx)
+	return args.Error(0)
+}
+
 func (m *MockTxPool) PopTxsFromQueue(max int) [][]byte {
 	args := m.Called(max)
 	return castBytesBytes(args.Get(0))
@@ -47,6 +52,11 @@ func (m *MockTxPool) SyncTxs(peer *core.PublicKey, hashes [][]byte) error {
 func (m *MockTxPool) GetTx(hash []byte) *core.Transaction {
 	args := m.Called(hash)
 	return castTransaction(args.Get(0))
+}
+
+func (m *MockTxPool) GetTxStatus(hash []byte) txpool.TxStatus {
+	args := m.Called()
+	return args.Get(0).(txpool.TxStatus)
 }
 
 func (m *MockTxPool) GetStatus() txpool.Status {
@@ -101,6 +111,11 @@ type MockMsgService struct {
 
 var _ MsgService = (*MockMsgService)(nil)
 
+func (m *MockMsgService) BroadcastBatch(batch *core.Batch) error {
+	args := m.Called(batch)
+	return args.Error(0)
+}
+
 func (m *MockMsgService) BroadcastProposal(blk *core.Block) error {
 	args := m.Called(blk)
 	return args.Error(0)
@@ -112,6 +127,11 @@ func (m *MockMsgService) BroadcastNewView(qc *core.QuorumCert) error {
 }
 
 func (m *MockMsgService) SendVote(pubKey *core.PublicKey, vote *core.Vote) error {
+	args := m.Called(pubKey, vote)
+	return args.Error(0)
+}
+
+func (m *MockMsgService) SendBatchVote(pubKey *core.PublicKey, vote *core.BatchVote) error {
 	args := m.Called(pubKey, vote)
 	return args.Error(0)
 }
@@ -131,12 +151,22 @@ func (m *MockMsgService) SendNewView(pubKey *core.PublicKey, qc *core.QuorumCert
 	return args.Error(0)
 }
 
+func (m *MockMsgService) SubscribeBatch(buffer int) *emitter.Subscription {
+	args := m.Called(buffer)
+	return castSubscription(args.Get(0))
+}
+
 func (m *MockMsgService) SubscribeProposal(buffer int) *emitter.Subscription {
 	args := m.Called(buffer)
 	return castSubscription(args.Get(0))
 }
 
 func (m *MockMsgService) SubscribeVote(buffer int) *emitter.Subscription {
+	args := m.Called(buffer)
+	return castSubscription(args.Get(0))
+}
+
+func (m *MockMsgService) SubscribeBatchVote(buffer int) *emitter.Subscription {
 	args := m.Called(buffer)
 	return castSubscription(args.Get(0))
 }

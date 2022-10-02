@@ -21,6 +21,8 @@ type MsgType byte
 
 const (
 	_ MsgType = iota
+	MsgTypeBatch
+	MsgTypeBatchVote
 	MsgTypeProposal
 	MsgTypeVote
 	MsgTypeNewView
@@ -35,10 +37,12 @@ type MsgService struct {
 	host      *Host
 	receivers map[MsgType]msgReceiver
 
-	proposalEmitter *emitter.Emitter
-	voteEmitter     *emitter.Emitter
-	newViewEmitter  *emitter.Emitter
-	txListEmitter   *emitter.Emitter
+	batchEmitter     *emitter.Emitter
+	batchVoteEmitter *emitter.Emitter
+	proposalEmitter  *emitter.Emitter
+	voteEmitter      *emitter.Emitter
+	newViewEmitter   *emitter.Emitter
+	txListEmitter    *emitter.Emitter
 
 	reqHandlers map[pb.Request_Type]ReqHandler
 
@@ -58,12 +62,20 @@ func NewMsgService(host *Host) *MsgService {
 	return svc
 }
 
+func (svc *MsgService) SubscribeBatch(buffer int) *emitter.Subscription {
+	return svc.batchEmitter.Subscribe(buffer)
+}
+
 func (svc *MsgService) SubscribeProposal(buffer int) *emitter.Subscription {
 	return svc.proposalEmitter.Subscribe(buffer)
 }
 
 func (svc *MsgService) SubscribeVote(buffer int) *emitter.Subscription {
 	return svc.voteEmitter.Subscribe(buffer)
+}
+
+func (svc *MsgService) SubscribeBatchVote(buffer int) *emitter.Subscription {
+	return svc.batchVoteEmitter.Subscribe(buffer)
 }
 
 func (svc *MsgService) SubscribeNewView(buffer int) *emitter.Subscription {
@@ -82,12 +94,28 @@ func (svc *MsgService) BroadcastProposal(blk *core.Block) error {
 	return svc.broadcastData(MsgTypeProposal, data)
 }
 
+func (svc *MsgService) BroadcastBatch(batch *core.Batch) error {
+	data, err := batch.Marshal()
+	if err != nil {
+		return err
+	}
+	return svc.broadcastData(MsgTypeBatch, data)
+}
+
 func (svc *MsgService) SendVote(pubKey *core.PublicKey, vote *core.Vote) error {
 	data, err := vote.Marshal()
 	if err != nil {
 		return err
 	}
 	return svc.sendData(pubKey, MsgTypeVote, data)
+}
+
+func (svc *MsgService) SendBatchVote(pubKey *core.PublicKey, vote *core.BatchVote) error {
+	data, err := vote.Marshal()
+	if err != nil {
+		return err
+	}
+	return svc.sendData(pubKey, MsgTypeBatchVote, data)
 }
 
 func (svc *MsgService) SendNewView(pubKey *core.PublicKey, qc *core.QuorumCert) error {
@@ -166,6 +194,8 @@ func (svc *MsgService) SetReqHandler(reqHandler ReqHandler) error {
 }
 
 func (svc *MsgService) setEmitters() {
+	svc.batchEmitter = emitter.New()
+	svc.batchVoteEmitter = emitter.New()
 	svc.proposalEmitter = emitter.New()
 	svc.voteEmitter = emitter.New()
 	svc.newViewEmitter = emitter.New()
@@ -174,6 +204,8 @@ func (svc *MsgService) setEmitters() {
 
 func (svc *MsgService) setMsgReceivers() {
 	svc.receivers = make(map[MsgType]msgReceiver)
+	svc.receivers[MsgTypeBatch] = svc.onReceiveBatch
+	svc.receivers[MsgTypeBatchVote] = svc.onReceiveBatchVote
 	svc.receivers[MsgTypeProposal] = svc.onReceiveProposal
 	svc.receivers[MsgTypeVote] = svc.onReceiveVote
 	svc.receivers[MsgTypeNewView] = svc.onReceiveNewView
@@ -192,6 +224,22 @@ func (svc *MsgService) listenPeer(peer *Peer) {
 			receiver(peer, msg[1:])
 		}
 	}
+}
+
+func (svc *MsgService) onReceiveBatch(peer *Peer, data []byte) {
+	batch := core.NewBatch()
+	if err := batch.Unmarshal(data); err != nil {
+		return
+	}
+	svc.batchEmitter.Emit(batch)
+}
+
+func (svc *MsgService) onReceiveBatchVote(peer *Peer, data []byte) {
+	vote := core.NewBatchVote()
+	if err := vote.Unmarshal(data); err != nil {
+		return
+	}
+	svc.batchVoteEmitter.Emit(vote)
 }
 
 func (svc *MsgService) onReceiveProposal(peer *Peer, data []byte) {

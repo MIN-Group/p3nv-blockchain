@@ -23,6 +23,9 @@ type Consensus struct {
 	validator *validator
 	pacemaker *pacemaker
 	rotator   *rotator
+
+	voterState  *voterState
+	leaderState *leaderState
 }
 
 func New(resources *Resources, config Config) *Consensus {
@@ -53,6 +56,7 @@ func (cons *Consensus) start() {
 	cons.startTime = time.Now().UnixNano()
 	b0, q0 := cons.getInitialBlockAndQC()
 	cons.setupState(b0)
+	cons.setupPPovState()
 	cons.setupHsDriver()
 	cons.setupHotstuff(b0, q0)
 	cons.setupValidator()
@@ -76,7 +80,7 @@ func (cons *Consensus) stop() {
 func (cons *Consensus) setupState(b0 *core.Block) {
 	cons.state = newState(cons.resources)
 	cons.state.setBlock(b0)
-	cons.state.setLeaderIndex(cons.resources.VldStore.GetVoterIndex(b0.Proposer()))
+	cons.state.setLeaderIndex(cons.resources.VldStore.GetWorkerIndex(b0.Proposer()))
 }
 
 func (cons *Consensus) getInitialBlockAndQC() (*core.Block, *core.QuorumCert) {
@@ -102,6 +106,7 @@ func (cons *Consensus) setupHsDriver() {
 		config:       cons.config,
 		checkTxDelay: 10 * time.Millisecond,
 		state:        cons.state,
+		leaderState:  cons.leaderState,
 	}
 }
 
@@ -113,20 +118,33 @@ func (cons *Consensus) setupHotstuff(b0 *core.Block, q0 *core.QuorumCert) {
 	)
 }
 
+func (cons *Consensus) setupPPovState() {
+	cons.voterState = newVoterState()
+	cons.voterState.setVoteBatchLimit(cons.config.VoteBatchLimit)
+
+	cons.leaderState = newLeaderState()
+	cons.leaderState.setBatchSignLimit(cons.resources.VldStore.MajorityVoterCount())
+	cons.leaderState.setBatchWaitTime(cons.config.BatchWaitTime)
+	cons.leaderState.setBlockBatchLimit(cons.config.BlockBatchLimit)
+}
+
 func (cons *Consensus) setupValidator() {
 	cons.validator = &validator{
-		resources: cons.resources,
-		state:     cons.state,
-		hotstuff:  cons.hotstuff,
+		resources:   cons.resources,
+		state:       cons.state,
+		leaderState: cons.leaderState,
+		voterState:  cons.voterState,
+		hotstuff:    cons.hotstuff,
 	}
 }
 
 func (cons *Consensus) setupPacemaker() {
 	cons.pacemaker = &pacemaker{
-		resources: cons.resources,
-		config:    cons.config,
-		state:     cons.state,
-		hotstuff:  cons.hotstuff,
+		resources:  cons.resources,
+		config:     cons.config,
+		state:      cons.state,
+		voterState: cons.voterState,
+		hotstuff:   cons.hotstuff,
 	}
 }
 

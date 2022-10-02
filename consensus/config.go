@@ -8,14 +8,24 @@ import "time"
 type Config struct {
 	ChainID int64
 
-	// maximum tx count in a block
-	BlockTxLimit int
+	// maximum tx count in a batch
+	BatchTxLimit int
+
+	// maximum batch count in a block
+	BlockBatchLimit int
+
+	VoteBatchLimit int
 
 	// block creation delay if no transactions in the pool
 	TxWaitTime time.Duration
 
-	// for leader, delay to propose next block if she cannot create qc")
-	BeatTimeout time.Duration
+	// Leader等待对某个Batch的投票的最长时间
+	BatchWaitTime time.Duration
+
+	// for leader, delay to propose next block if she cannot create qc
+	ProposeTimeout time.Duration
+
+	BatchTimeout time.Duration
 
 	// minimum delay between each block (i.e, it can define maximum block rate)
 	BlockDelay time.Duration
@@ -28,10 +38,14 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	BlockTxLimit:  400,
-	TxWaitTime:    1 * time.Second,
-	BeatTimeout:   500 * time.Millisecond,
-	BlockDelay:    40 * time.Millisecond, // maximum block rate = 25 blk per sec
-	ViewWidth:     30 * time.Second,
-	LeaderTimeout: 10 * time.Second,
+	BatchTxLimit:    200,
+	BlockBatchLimit: 4,
+	VoteBatchLimit:  4,
+	TxWaitTime:      1 * time.Second,
+	BatchWaitTime:   3 * time.Second,
+	ProposeTimeout:  500 * time.Millisecond,
+	BatchTimeout:    500 * time.Millisecond,
+	BlockDelay:      40 * time.Millisecond, // maximum block rate = 25 blk per sec
+	ViewWidth:       30 * time.Second,
+	LeaderTimeout:   10 * time.Second,
 }

@@ -25,13 +25,13 @@ const (
 	FlagExecConcurrentLimit = "execution-concurrentLimit"
 
 	// consensus
-	FlagChainID       = "chainid"
-	FlagBlockTxLimit  = "consensus-blockTxLimit"
-	FlagTxWaitTime    = "consensus-txWaitTime"
-	FlagBeatTimeout   = "consensus-beatTimeout"
-	FlagBlockDelay    = "consensus-blockDelay"
-	FlagViewWidth     = "consensus-viewWidth"
-	FlagLeaderTimeout = "consensus-leaderTimeout"
+	FlagChainID        = "chainid"
+	FlagBlockTxLimit   = "consensus-blockTxLimit"
+	FlagTxWaitTime     = "consensus-txWaitTime"
+	FlagProposeTimeout = "consensus-proposeTimeout"
+	FlagBlockDelay     = "consensus-blockDelay"
+	FlagViewWidth      = "consensus-viewWidth"
+	FlagLeaderTimeout  = "consensus-leaderTimeout"
 )
 
 var nodeConfig = node.DefaultConfig
@@ -81,16 +81,16 @@ func init() {
 		FlagChainID, nodeConfig.ConsensusConfig.ChainID,
 		"chainid is used to create genesis block")
 
-	rootCmd.Flags().IntVar(&nodeConfig.ConsensusConfig.BlockTxLimit,
-		FlagBlockTxLimit, nodeConfig.ConsensusConfig.BlockTxLimit,
+	rootCmd.Flags().IntVar(&nodeConfig.ConsensusConfig.BatchTxLimit,
+		FlagBlockTxLimit, nodeConfig.ConsensusConfig.BatchTxLimit,
 		"maximum tx count in a block")
 
 	rootCmd.Flags().DurationVar(&nodeConfig.ConsensusConfig.TxWaitTime,
 		FlagTxWaitTime, nodeConfig.ConsensusConfig.TxWaitTime,
 		"block creation delay if no transactions in the pool")
 
-	rootCmd.Flags().DurationVar(&nodeConfig.ConsensusConfig.BeatTimeout,
-		FlagBeatTimeout, nodeConfig.ConsensusConfig.BeatTimeout,
+	rootCmd.Flags().DurationVar(&nodeConfig.ConsensusConfig.ProposeTimeout,
+		FlagProposeTimeout, nodeConfig.ConsensusConfig.ProposeTimeout,
 		"duration to wait to propose next block if leader cannot create qc")
 
 	rootCmd.Flags().DurationVar(&nodeConfig.ConsensusConfig.BlockDelay,

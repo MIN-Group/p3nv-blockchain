@@ -19,6 +19,9 @@ type validator struct {
 	state     *state
 	hotstuff  *hotstuff.Hotstuff
 
+	voterState  *voterState
+	leaderState *leaderState
+
 	mtxProposal sync.Mutex
 
 	stopCh chan struct{}
@@ -29,6 +32,8 @@ func (vld *validator) start() {
 		return
 	}
 	vld.stopCh = make(chan struct{})
+	go vld.batchLoop()
+	go vld.batchVoteLoop()
 	go vld.proposalLoop()
 	go vld.voteLoop()
 	go vld.newViewLoop()
@@ -49,6 +54,23 @@ func (vld *validator) stop() {
 	vld.stopCh = nil
 }
 
+func (vld *validator) batchLoop() {
+	sub := vld.resources.MsgSvc.SubscribeBatch(100)
+	defer sub.Unsubscribe()
+
+	for {
+		select {
+		case <-vld.stopCh:
+			return
+
+		case e := <-sub.Events():
+			if err := vld.onReceiveBatch(e.(*core.Batch)); err != nil {
+				logger.I().Warnf("received batch failed, %+v", err)
+			}
+		}
+	}
+}
+
 func (vld *validator) proposalLoop() {
 	sub := vld.resources.MsgSvc.SubscribeProposal(100)
 	defer sub.Unsubscribe()
@@ -60,7 +82,7 @@ func (vld *validator) proposalLoop() {
 
 		case e := <-sub.Events():
 			if err := vld.onReceiveProposal(e.(*core.Block)); err != nil {
-				logger.I().Warnf("on received proposal failed, %+v", err)
+				logger.I().Warnf("received proposal failed, %+v", err)
 			}
 		}
 	}
@@ -83,6 +105,23 @@ func (vld *validator) voteLoop() {
 	}
 }
 
+func (vld *validator) batchVoteLoop() {
+	sub := vld.resources.MsgSvc.SubscribeBatchVote(1000)
+	defer sub.Unsubscribe()
+
+	for {
+		select {
+		case <-vld.stopCh:
+			return
+
+		case e := <-sub.Events():
+			if err := vld.onReceiveBatchVote(e.(*core.BatchVote)); err != nil {
+				logger.I().Warnf("received batch vote failed, %+v", err)
+			}
+		}
+	}
+}
+
 func (vld *validator) newViewLoop() {
 	sub := vld.resources.MsgSvc.SubscribeNewView(100)
 	defer sub.Unsubscribe()
@@ -100,6 +139,25 @@ func (vld *validator) newViewLoop() {
 	}
 }
 
+func (vld *validator) onReceiveBatch(batch *core.Batch) error {
+	if err := batch.Validate(vld.resources.VldStore); err != nil {
+		return err
+	}
+	vld.voterState.addBatch(batch)
+	widx := vld.resources.VldStore.GetWorkerIndex(batch.Proposer())
+	logger.I().Debugf("received batch from worker %d", widx)
+	if vld.state.isThisNodeVoter() && vld.voterState.hasEnoughBatch() {
+		signer := vld.resources.Signer
+		vote := core.NewBatchVote().Build(vld.voterState.popBatch(), signer)
+		vld.leaderState.addBatchVote(vote)
+		vidx := vld.resources.VldStore.GetVoterIndex(signer.PublicKey())
+		logger.I().Debugf("generated batch vote by voter %d", vidx)
+		leader := vld.resources.VldStore.GetWorker(vld.state.getLeaderIndex())
+		vld.resources.MsgSvc.SendBatchVote(leader, vote)
+	}
+	return nil
+}
+
 func (vld *validator) onReceiveProposal(proposal *core.Block) error {
 	vld.mtxProposal.Lock()
 	defer vld.mtxProposal.Unlock()
@@ -107,7 +165,7 @@ func (vld *validator) onReceiveProposal(proposal *core.Block) error {
 	if err := proposal.Validate(vld.resources.VldStore); err != nil {
 		return err
 	}
-	pidx := vld.resources.VldStore.GetVoterIndex(proposal.Proposer())
+	pidx := vld.resources.VldStore.GetWorkerIndex(proposal.Proposer())
 	logger.I().Debugw("received proposal", "proposer", pidx, "height", proposal.Height())
 	parent, err := vld.getParentBlock(proposal)
 	if err != nil {
@@ -251,7 +309,7 @@ func (vld *validator) updateHotstuff(blk *core.Block, voting bool) error {
 
 func (vld *validator) verifyProposalToVote(proposal *core.Block) error {
 	if !vld.state.isLeader(proposal.Proposer()) {
-		pidx := vld.resources.VldStore.GetVoterIndex(proposal.Proposer())
+		pidx := vld.resources.VldStore.GetWorkerIndex(proposal.Proposer())
 		return fmt.Errorf("proposer %d is not leader", pidx)
 	}
 	// on node restart, not commited any blocks yet, don't check merkle root
@@ -296,6 +354,16 @@ func (vld *validator) onReceiveVote(vote *core.Vote) error {
 		return err
 	}
 	vld.hotstuff.OnReceiveVote(newHsVote(vote, vld.state))
+	return nil
+}
+
+func (vld *validator) onReceiveBatchVote(vote *core.BatchVote) error {
+	if err := vote.Validate(vld.resources.VldStore); err != nil {
+		return err
+	}
+	vld.leaderState.addBatchVote(vote)
+	pidx := vld.resources.VldStore.GetVoterIndex(vote.Voter())
+	logger.I().Debugf("received batch vote from voter %d", pidx)
 	return nil
 }
 

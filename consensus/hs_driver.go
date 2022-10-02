@@ -19,22 +19,25 @@ type hsDriver struct {
 	checkTxDelay time.Duration //检测TxPool交易数量的延迟
 
 	state *state
+
+	leaderState *leaderState
 }
 
-//验证hsDriver实现了hotstuff的Driver
+// 验证hsDriver实现了hotstuff的Driver
 var _ hotstuff.Driver = (*hsDriver)(nil)
 
-func (hsd *hsDriver) MajorityCount() int {
-	return hsd.resources.VldStore.MajorityCount()
+func (hsd *hsDriver) MajorityValidatorCount() int {
+	return hsd.resources.VldStore.MajorityValidatorCount()
 }
 
 func (hsd *hsDriver) CreateLeaf(parent hotstuff.Block, qc hotstuff.QC, height uint64) hotstuff.Block {
+	batchs := hsd.leaderState.popReadyBatch()
 	//core.Block的链式调用
 	blk := core.NewBlock().
 		SetParentHash(parent.(*hsBlock).block.Hash()).
 		SetQuorumCert(qc.(*hsQC).qc).
 		SetHeight(height).
-		SetTransactions(hsd.resources.TxPool.PopTxsFromQueue(hsd.config.BlockTxLimit)).
+		SetBatchs(batchs).
 		SetExecHeight(hsd.resources.Storage.GetBlockHeight()).
 		SetMerkleRoot(hsd.resources.Storage.GetMerkleRoot()).
 		SetTimestamp(time.Now().UnixNano()).
@@ -63,7 +66,7 @@ func (hsd *hsDriver) VoteBlock(hsBlk hotstuff.Block) {
 	vote := blk.Vote(hsd.resources.Signer)
 	hsd.resources.TxPool.SetTxsPending(blk.Transactions())
 	hsd.delayVoteWhenNoTxs()
-	proposer := hsd.resources.VldStore.GetVoterIndex(blk.Proposer())
+	proposer := hsd.resources.VldStore.GetWorkerIndex(blk.Proposer())
 	if proposer != hsd.state.getLeaderIndex() {
 		return // view changed happened
 	}
@@ -109,6 +112,7 @@ func (hsd *hsDriver) Commit(hsBlk hotstuff.Block) {
 	hsd.cleanStateOnCommited(bexe)
 	logger.I().Debugw("commited bock",
 		"height", bexe.Height(),
+		"batchs", len(bexe.Batchs()),
 		"txs", len(txs),
 		"elapsed", time.Since(start))
 }

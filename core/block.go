@@ -26,6 +26,7 @@ type Block struct {
 	data       *pb.Block
 	proposer   *PublicKey
 	quorumCert *QuorumCert
+	batchs     []*Batch
 }
 
 var _ json.Marshaler = (*Block)(nil)
@@ -49,8 +50,8 @@ func (blk *Block) Sum() []byte {
 	binary.Write(h, binary.BigEndian, blk.data.ExecHeight)
 	h.Write(blk.data.MerkleRoot)
 	binary.Write(h, binary.BigEndian, blk.data.Timestamp)
-	for _, txHash := range blk.data.Transactions {
-		h.Write(txHash)
+	for _, batch := range blk.data.Batchs {
+		h.Write(batch.Hash)
 	}
 	return h.Sum(nil)
 }
@@ -64,6 +65,11 @@ func (blk *Block) Validate(vs ValidatorStore) error {
 		if err := blk.quorumCert.Validate(vs); err != nil {
 			return err
 		}
+		for _, batch := range blk.Batchs() {
+			if err := batch.Validate(vs); err != nil {
+				return err
+			}
+		}
 	}
 	if !bytes.Equal(blk.Sum(), blk.Hash()) {
 		return ErrInvalidBlockHash
@@ -72,7 +78,7 @@ func (blk *Block) Validate(vs ValidatorStore) error {
 		PubKey: blk.data.Proposer,
 		Value:  blk.data.Signature,
 	})
-	if !vs.IsVoter(sig.PublicKey()) {
+	if !vs.IsWorker(sig.PublicKey()) {
 		return ErrInvalidValidator
 	}
 	if err != nil {
@@ -112,6 +118,13 @@ func (blk *Block) setData(data *pb.Block) error {
 		blk.quorumCert = NewQuorumCert()
 		if err := blk.quorumCert.setData(data.QuorumCert); err != nil {
 			return err
+		}
+		blk.batchs = make([]*Batch, len(data.Batchs))
+		for index := range blk.batchs {
+			blk.batchs[index] = NewBatch()
+			if err := blk.batchs[index].setData(data.Batchs[index]); err != nil {
+				return err
+			}
 		}
 	}
 	proposer, err := NewPublicKey(blk.data.Proposer)
@@ -153,8 +166,13 @@ func (blk *Block) SetTimestamp(val int64) *Block {
 	return blk
 }
 
-func (blk *Block) SetTransactions(val [][]byte) *Block {
-	blk.data.Transactions = val
+func (blk *Block) SetBatchs(val []*Batch) *Block {
+	blk.data.Batchs = make([]*pb.Batch, len(val))
+	blk.batchs = make([]*Batch, len(val))
+	for index := range val {
+		blk.batchs[index] = val[index]
+		blk.data.Batchs[index] = val[index].data
+	}
 	return blk
 }
 
@@ -174,8 +192,23 @@ func (blk *Block) QuorumCert() *QuorumCert { return blk.quorumCert }
 func (blk *Block) ExecHeight() uint64      { return blk.data.ExecHeight }
 func (blk *Block) MerkleRoot() []byte      { return blk.data.MerkleRoot }
 func (blk *Block) Timestamp() int64        { return blk.data.Timestamp }
-func (blk *Block) Transactions() [][]byte  { return blk.data.Transactions }
+func (blk *Block) Batchs() []*Batch        { return blk.batchs }
 func (blk *Block) IsGenesis() bool         { return blk.Height() == 0 }
+
+func (blk *Block) Transactions() [][]byte {
+	//使用集合对Batch中的交易进行去重
+	txSet := make(map[string]struct{})
+	txList := make([][]byte, 0)
+	for _, batch := range blk.Batchs() {
+		for _, tx := range batch.Transactions() {
+			txSet[string(tx)] = struct{}{}
+		}
+	}
+	for tx, _ := range txSet {
+		txList = append(txList, []byte(tx))
+	}
+	return txList
+}
 
 // Marshal encodes blk as bytes
 func (blk *Block) Marshal() ([]byte, error) {

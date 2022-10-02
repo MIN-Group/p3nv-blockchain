@@ -23,13 +23,17 @@ func TestBlock(t *testing.T) {
 		}},
 	})
 
+	batch := NewBatch().SetTransactions([][]byte{{1}}).Sign(privKey)
+	sign := privKey.Sign(batch.Hash())
+	batchQC := NewBatchQuorumCert().Build(batch.Hash(), []*Signature{sign})
+	batch.SetBatchQuorumCert(batchQC)
 	blk := NewBlock().
 		SetHeight(4).
 		SetParentHash([]byte{1}).
 		SetExecHeight(0).
 		SetQuorumCert(qc).
 		SetMerkleRoot([]byte{1}).
-		SetTransactions([][]byte{{1}}).
+		SetBatchs([]*Batch{batch}).
 		Sign(privKey)
 
 	assertt.Equal(uint64(4), blk.Height())
@@ -43,9 +47,12 @@ func TestBlock(t *testing.T) {
 
 	vs := new(MockValidatorStore)
 	vs.On("VoterCount").Return(1)
-	vs.On("MajorityCount").Return(1)
+	vs.On("MajorityValidatorCount").Return(1)
+	vs.On("MajorityVoterCount").Return(1)
 	vs.On("IsVoter", privKey.PublicKey()).Return(true)
 	vs.On("IsVoter", mock.Anything).Return(false)
+	vs.On("IsWorker", privKey.PublicKey()).Return(true)
+	vs.On("IsWorker", mock.Anything).Return(false)
 
 	bOk, err := blk.Marshal()
 	assertt.NoError(err)
@@ -97,11 +104,8 @@ func TestBlock(t *testing.T) {
 
 func TestBlock_Vote(t *testing.T) {
 	assert := assert.New(t)
-
 	privKey := GenerateKey(nil)
-
 	blk := NewBlock().Sign(privKey)
-
 	vote := blk.Vote(privKey)
 	assert.Equal(blk.Hash(), vote.BlockHash())
 
