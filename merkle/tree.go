@@ -153,6 +153,7 @@ func (tree *Tree) getGroupPositions(nodes []*Node) Positions {
 	return positions
 }
 
+// makeGroups 根据Position映射构造Group映射
 func (tree *Tree) makeGroups(pmap map[string]*Position) map[string]*Group {
 	groups := make(map[string]*Group, len(pmap))
 	for _, p := range pmap {

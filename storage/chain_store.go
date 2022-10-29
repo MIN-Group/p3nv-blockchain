@@ -22,6 +22,7 @@ func (cs *chainStore) getLastBlock() (*core.Block, error) {
 	return cs.getBlockByHeight(height)
 }
 
+// getBlockHeight 获取最新区块高度
 func (cs *chainStore) getBlockHeight() (uint64, error) {
 	b, err := cs.getter.Get([]byte{colBlockHeight})
 	if err != nil {
@@ -38,10 +39,12 @@ func (cs *chainStore) getBlockByHeight(height uint64) (*core.Block, error) {
 	return cs.getBlock(hash)
 }
 
+// getBlockHashByHeight 根据高度获取区块Hash
 func (cs *chainStore) getBlockHashByHeight(height uint64) ([]byte, error) {
 	return cs.getter.Get(concatBytes([]byte{colBlockHashByHeight}, uint64BEBytes(height)))
 }
 
+// getBlock 根据Hash获取区块
 func (cs *chainStore) getBlock(hash []byte) (*core.Block, error) {
 	b, err := cs.getter.Get(concatBytes([]byte{colBlockByHash}, hash))
 	if err != nil {
@@ -54,6 +57,7 @@ func (cs *chainStore) getBlock(hash []byte) (*core.Block, error) {
 	return blk, nil
 }
 
+// getLastQC 获取上一个已提交区块的QC
 func (cs *chainStore) getLastQC() (*core.QuorumCert, error) {
 	b, err := cs.getter.Get([]byte{colLastQC})
 	if err != nil {
@@ -66,6 +70,7 @@ func (cs *chainStore) getLastQC() (*core.QuorumCert, error) {
 	return qc, nil
 }
 
+// getBlockCommit 通过Hash获取区块提交记录
 func (cs *chainStore) getBlockCommit(hash []byte) (*core.BlockCommit, error) {
 	b, err := cs.getter.Get(concatBytes([]byte{colBlockCommitByHash}, hash))
 	if err != nil {
@@ -78,6 +83,7 @@ func (cs *chainStore) getBlockCommit(hash []byte) (*core.BlockCommit, error) {
 	return bcm, nil
 }
 
+// getTx 根据Hash获取交易
 func (cs *chainStore) getTx(hash []byte) (*core.Transaction, error) {
 	b, err := cs.getter.Get(concatBytes([]byte{colTxByHash}, hash))
 	if err != nil {
@@ -94,6 +100,7 @@ func (cs *chainStore) hasTx(hash []byte) bool {
 	return cs.getter.HasKey(concatBytes([]byte{colTxByHash}, hash))
 }
 
+// getTxCommit 根据Hash获取交易提交记录
 func (cs *chainStore) getTxCommit(hash []byte) (*core.TxCommit, error) {
 	val, err := cs.getter.Get(concatBytes([]byte{colTxCommitByHash}, hash))
 	if err != nil {
@@ -106,6 +113,7 @@ func (cs *chainStore) getTxCommit(hash []byte) (*core.TxCommit, error) {
 	return txc, nil
 }
 
+// setBlockHeight 获取设置最新Block高度的函数
 func (cs *chainStore) setBlockHeight(height uint64) updateFunc {
 	return func(setter setter) error {
 		return setter.Set([]byte{colBlockHeight}, uint64BEBytes(height))

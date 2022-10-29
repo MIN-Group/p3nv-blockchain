@@ -79,7 +79,7 @@ func NewValidatorStore(workers []string, weights []int, voters []string) Validat
 		store.workers[i] = set[v]
 	}
 
-	store.vcount = len(workers) //TODO
+	store.vcount = len(workers) //TODO 投票节点收集区块的阈值
 
 	store.voterMap = make(map[string]int, len(store.voters))
 	for i, v := range store.voters {

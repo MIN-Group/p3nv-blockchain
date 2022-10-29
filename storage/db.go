@@ -30,17 +30,19 @@ func NewDB(path string) (*badger.DB, error) {
 	return badger.Open(badger.DefaultOptions(path))
 }
 
+// setter badger.Txn实现该接口
 type setter interface {
 	Set(key, value []byte) error
 }
 
-type updateFunc func(setter setter) error
+type updateFunc func(setter setter) error //包裹setter的更新函数
 
 type getter interface {
 	Get(key []byte) ([]byte, error)
 	HasKey(key []byte) bool
 }
 
+// badgerGetter 基于badger.DB实现getter
 type badgerGetter struct {
 	db *badger.DB
 }

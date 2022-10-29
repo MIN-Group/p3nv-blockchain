@@ -12,8 +12,8 @@ import (
 type Position struct {
 	level uint8
 	index *big.Int
-	bytes []byte
-	str   string
+	bytes []byte //position字节序列
+	str   string //string(bytes)
 }
 
 // UnmarshalPosition unmarshals position from raw bytes

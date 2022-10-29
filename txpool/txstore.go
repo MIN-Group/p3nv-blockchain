@@ -70,8 +70,8 @@ func (txq *txQueue) Pop() interface{} {
 }
 
 type txStore struct {
-	txq     *txQueue
-	txItems map[string]*txItem
+	txq     *txQueue           //交易队列
+	txItems map[string]*txItem //tx.Hash ==> txItem
 
 	mtx sync.RWMutex
 }

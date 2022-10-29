@@ -10,13 +10,13 @@ import (
 )
 
 type broadcaster struct {
-	msgSvc MsgService
+	msgSvc MsgService //通信服务
 
-	queue     chan *core.Transaction
-	txBatch   []*core.Transaction
-	batchSize int
+	queue     chan *core.Transaction //待广播交易的chan
+	txBatch   []*core.Transaction    //待广播交易的切片
+	batchSize int                    //当len(txBatch)>=batchSize时广播txBatch
 
-	timeout time.Duration
+	timeout time.Duration //当timeout超时广播txBatch
 	timer   *time.Timer
 }
 

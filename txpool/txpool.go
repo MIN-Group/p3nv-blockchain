@@ -14,9 +14,9 @@ import (
 )
 
 type Status struct {
-	Total   int `json:"total"`
-	Pending int `json:"pending"`
-	Queue   int `json:"queue"`
+	Total   int `json:"total"`   //Total = len(txStore.txItems)
+	Pending int `json:"pending"` //Pending = Total-Queue
+	Queue   int `json:"queue"`   //Queue = len(txStore.txq)
 }
 
 type Storage interface {
@@ -43,11 +43,11 @@ const (
 )
 
 type TxPool struct {
-	storage   Storage
-	execution Execution
-	msgSvc    MsgService
+	storage   Storage    //存储服务
+	execution Execution  //交易执行服务
+	msgSvc    MsgService //通信服务
 
-	store       *txStore
+	store       *txStore //交易缓存
 	broadcaster *broadcaster
 }
 

@@ -75,12 +75,14 @@ func (ms *merkleStore) setNode(n *merkle.Node) updateFunc {
 	}
 }
 
+// setLeafCount 设置树叶子数量
 func (ms *merkleStore) setLeafCount(leafCount *big.Int) updateFunc {
 	return func(setter setter) error {
 		return setter.Set([]byte{colMerkleLeafCount}, leafCount.Bytes())
 	}
 }
 
+// setTreeHeight 设置树高度
 func (ms *merkleStore) setTreeHeight(height uint8) updateFunc {
 	return func(setter setter) error {
 		return setter.Set([]byte{colMerkleTreeHeight}, []byte{height})
