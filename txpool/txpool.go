@@ -5,13 +5,14 @@ package txpool
 
 import (
 	"bytes"
-	"encoding/base64"
 	"errors"
 
 	"github.com/wooyang2018/ppov-blockchain/core"
 	"github.com/wooyang2018/ppov-blockchain/emitter"
 	"github.com/wooyang2018/ppov-blockchain/logger"
 )
+
+const IsBroadcastTx = false //是否广播交易
 
 type Status struct {
 	Total   int `json:"total"`   //Total = len(txStore.txItems)
@@ -39,7 +40,7 @@ const (
 	TxStatusNotFound TxStatus = iota
 	TxStatusQueue
 	TxStatusPending
-	TxStatusCommited
+	TxStatusCommitted
 )
 
 type TxPool struct {
@@ -59,6 +60,9 @@ func New(storage Storage, execution Execution, msgSvc MsgService) *TxPool {
 		store:       newTxStore(),
 		broadcaster: newBroadcaster(msgSvc),
 	}
+	if IsBroadcastTx {
+		go pool.broadcaster.run() //运行交易广播器
+	}
 	go pool.subscribeTxs()
 	return pool
 }
@@ -71,7 +75,11 @@ func (pool *TxPool) SyncTxs(peer *core.PublicKey, hashes [][]byte) error {
 	return pool.syncTxs(peer, hashes)
 }
 
-func (pool *TxPool) PopTxsFromQueue(max int) [][]byte {
+func (pool *TxPool) StoreTxs(txs *core.TxList) error {
+	return pool.storeTxs(txs)
+}
+
+func (pool *TxPool) PopTxsFromQueue(max int) []*core.Transaction {
 	return pool.store.popTxsFromQueue(max)
 }
 
@@ -191,6 +199,20 @@ func (pool *TxPool) requestTxList(peer *core.PublicKey, hashes [][]byte) (*core.
 	return txList, nil
 }
 
+func (pool *TxPool) storeTxs(txs *core.TxList) error {
+	missing := make([]*core.Transaction, 0)
+	for _, tx := range *txs {
+		if !pool.storage.HasTx(tx.Hash()) && pool.store.getTx(tx.Hash()) == nil {
+			missing = append(missing, tx)
+		}
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	txList := core.TxList(missing)
+	return pool.addTxList(&txList)
+}
+
 func (pool *TxPool) getTxsToExecute(hashes [][]byte) ([]*core.Transaction, [][]byte) {
 	txs := make([]*core.Transaction, 0, len(hashes))
 	executedTxs := make([][]byte, 0)
@@ -204,8 +226,7 @@ func (pool *TxPool) getTxsToExecute(hashes [][]byte) ([]*core.Transaction, [][]b
 			} else {
 				// tx not found in local node
 				// all txs from accepted blocks should be sync
-				logger.I().Fatalw("missing tx to execute",
-					"tx", base64.StdEncoding.EncodeToString(tx.Hash()))
+				logger.I().Fatalw("missing tx to execute", "tx", hash)
 			}
 		}
 	}
@@ -219,7 +240,7 @@ func (pool *TxPool) getTxStatus(hash []byte) TxStatus {
 		return status
 	}
 	if pool.storage.HasTx(hash) {
-		return TxStatusCommited
+		return TxStatusCommitted
 	}
 	return TxStatusNotFound
 }

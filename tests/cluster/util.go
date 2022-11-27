@@ -6,7 +6,6 @@ package cluster
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -19,7 +18,7 @@ import (
 )
 
 func ReadRemoteHosts(hostsPath string, nodeCount int) ([]string, error) {
-	raw, err := ioutil.ReadFile(hostsPath)
+	raw, err := os.ReadFile(hostsPath)
 	if err != nil {
 		return nil, err
 	}

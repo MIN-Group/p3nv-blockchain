@@ -23,10 +23,12 @@ var (
 
 // Block type
 type Block struct {
-	data       *pb.Block
-	proposer   *PublicKey
-	quorumCert *QuorumCert
-	batchs     []*Batch
+	data         *pb.Block
+	proposer     *PublicKey
+	quorumCert   *QuorumCert
+	batchs       []*Batch
+	txList       *TxList
+	transactions [][]byte
 }
 
 var _ json.Marshaler = (*Block)(nil)
@@ -132,6 +134,26 @@ func (blk *Block) setData(data *pb.Block) error {
 		return err
 	}
 	blk.proposer = proposer
+	return blk.setInternalData()
+}
+
+func (blk *Block) setInternalData() error {
+	//使用集合对Batch中的交易进行去重
+	txSet := make(map[string]struct{})
+	txList := make([]*Transaction, 0)
+	transactions := make([][]byte, 0)
+	for _, batch := range blk.batchs {
+		for _, tx := range *batch.TxList() {
+			if _, ok := txSet[string(tx.Hash())]; !ok {
+				txSet[string(tx.Hash())] = struct{}{}
+				txList = append(txList, tx)
+				transactions = append(transactions, tx.Hash())
+			}
+		}
+	}
+	res := TxList(txList)
+	blk.txList = &res
+	blk.transactions = transactions
 	return nil
 }
 
@@ -173,6 +195,7 @@ func (blk *Block) SetBatchs(val []*Batch) *Block {
 		blk.batchs[index] = val[index]
 		blk.data.Batchs[index] = val[index].data
 	}
+	blk.setInternalData()
 	return blk
 }
 
@@ -194,21 +217,8 @@ func (blk *Block) MerkleRoot() []byte      { return blk.data.MerkleRoot }
 func (blk *Block) Timestamp() int64        { return blk.data.Timestamp }
 func (blk *Block) Batchs() []*Batch        { return blk.batchs }
 func (blk *Block) IsGenesis() bool         { return blk.Height() == 0 }
-
-func (blk *Block) Transactions() [][]byte {
-	//使用集合对Batch中的交易进行去重
-	txSet := make(map[string]struct{})
-	txList := make([][]byte, 0)
-	for _, batch := range blk.Batchs() {
-		for _, tx := range batch.Transactions() {
-			txSet[string(tx)] = struct{}{}
-		}
-	}
-	for tx, _ := range txSet {
-		txList = append(txList, []byte(tx))
-	}
-	return txList
-}
+func (blk *Block) Transactions() [][]byte  { return blk.transactions }
+func (blk *Block) TxList() *TxList         { return blk.txList }
 
 // Marshal encodes blk as bytes
 func (blk *Block) Marshal() ([]byte, error) {

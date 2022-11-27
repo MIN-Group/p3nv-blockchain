@@ -25,6 +25,7 @@ func newTxItem(tx *core.Transaction) *txItem {
 	}
 }
 
+// inQueue 根据index判断交易是否在队列中
 func (item *txItem) inQueue() bool {
 	return item.index != -1
 }
@@ -70,8 +71,8 @@ func (txq *txQueue) Pop() interface{} {
 }
 
 type txStore struct {
-	txq     *txQueue           //交易队列
-	txItems map[string]*txItem //tx.Hash ==> txItem
+	txq     *txQueue           //交易队列/堆,receivedTime顺序，涉及排队的交易
+	txItems map[string]*txItem //tx.Hash ==> txItem，涉及全部交易
 
 	mtx sync.RWMutex
 }
@@ -95,7 +96,7 @@ func (store *txStore) addNewTx(tx *core.Transaction) {
 	store.txItems[string(tx.Hash())] = item
 }
 
-func (store *txStore) popTxsFromQueue(max int) [][]byte {
+func (store *txStore) popTxsFromQueue(max int) []*core.Transaction {
 	store.mtx.Lock()
 	defer store.mtx.Unlock()
 
@@ -103,10 +104,10 @@ func (store *txStore) popTxsFromQueue(max int) [][]byte {
 	if count == 0 {
 		return nil
 	}
-	ret := make([][]byte, count)
+	ret := make([]*core.Transaction, count)
 	for i := range ret {
 		item := (heap.Pop(store.txq)).(*txItem)
-		ret[i] = item.tx.Hash()
+		ret[i] = item.tx
 	}
 	return ret
 }

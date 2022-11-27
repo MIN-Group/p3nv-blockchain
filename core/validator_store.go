@@ -12,19 +12,19 @@ import (
 
 // ValidatorStore godoc
 type ValidatorStore interface {
-	VoterCount() int
-	MajorityVoterCount() int
-	WorkerCount() int
-	EnoughWorkerCount() int
-	ValidatorCount() int
-	MajorityValidatorCount() int
-	IsVoter(pubKey *PublicKey) bool
-	IsWorker(pubKey *PublicKey) bool
-	GetVoter(idx int) *PublicKey
-	GetWorker(idx int) *PublicKey
-	GetVoterIndex(pubKey *PublicKey) int
-	GetWorkerIndex(pubKey *PublicKey) int
-	GetWorkerWeight(idx int) int
+	VoterCount() int                      //返回投票节点数量
+	MajorityVoterCount() int              //返回大多数投票节点数量
+	WorkerCount() int                     //返回记账节点数量
+	EnoughWorkerCount() int               //返回足够记账节点数量
+	ValidatorCount() int                  //返回验证节点数量
+	MajorityValidatorCount() int          //返回大多数验证节点数量
+	IsVoter(pubKey *PublicKey) bool       //返回指定公钥是否投票节点
+	IsWorker(pubKey *PublicKey) bool      //返回指定公钥是否记账节点
+	GetVoter(idx int) *PublicKey          //获取指定索引的投票节点
+	GetWorker(idx int) *PublicKey         //获取指定索引的记账节点
+	GetVoterIndex(pubKey *PublicKey) int  //获取指定公钥的投票节点的索引
+	GetWorkerIndex(pubKey *PublicKey) int //获取指定公钥的记账节点的索引
+	GetWorkerWeight(idx int) int          //获取指定索引的记账节点权重
 }
 
 type ppovValidatorStore struct {

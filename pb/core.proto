@@ -24,7 +24,8 @@ message Batch{
   BatchQuorumCert batchQuorumCert = 3;
   int64 timestamp = 4;
   repeated bytes transactions = 5; // transaction hashes
-  bytes signature = 6; // signature of proposer
+  repeated Transaction txList = 6; //transaction list
+  bytes signature = 7; // signature of proposer
 }
 
 message BlockCommit {

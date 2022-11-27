@@ -60,11 +60,11 @@ func TestTxStore_popTxsFromQueue(t *testing.T) {
 	time.Sleep(1 * time.Microsecond)
 	store.addNewTx(tx4)
 
-	hashes := store.popTxsFromQueue(2)
+	txs := store.popTxsFromQueue(2)
 
-	assert.Equal(2, len(hashes))
-	assert.Equal(tx1.Hash(), hashes[0])
-	assert.Equal(tx2.Hash(), hashes[1])
+	assert.Equal(2, len(txs))
+	assert.Equal(tx1.Hash(), txs[0].Hash())
+	assert.Equal(tx2.Hash(), txs[1].Hash())
 
 	assert.False(store.txItems[string(tx1.Hash())].inQueue())
 	assert.False(store.txItems[string(tx2.Hash())].inQueue())
@@ -73,21 +73,21 @@ func TestTxStore_popTxsFromQueue(t *testing.T) {
 	assert.Equal(2, store.getStatus().Queue)
 	assert.Equal(2, store.getStatus().Pending)
 
-	hashes = store.popTxsFromQueue(3)
+	txs = store.popTxsFromQueue(3)
 
 	assert.False(store.txItems[string(tx3.Hash())].inQueue())
 	assert.False(store.txItems[string(tx4.Hash())].inQueue())
 
-	assert.Equal(2, len(hashes))
-	assert.Equal(tx3.Hash(), hashes[0])
-	assert.Equal(tx4.Hash(), hashes[1])
+	assert.Equal(2, len(txs))
+	assert.Equal(tx3.Hash(), txs[0].Hash())
+	assert.Equal(tx4.Hash(), txs[1].Hash())
 
 	assert.Equal(4, store.getStatus().Total)
 	assert.Equal(0, store.getStatus().Queue)
 	assert.Equal(4, store.getStatus().Pending)
 
-	hashes = store.popTxsFromQueue(2)
-	assert.Nil(hashes)
+	txs = store.popTxsFromQueue(2)
+	assert.Nil(txs)
 }
 
 func TestTxStore_putTxsToQueue(t *testing.T) {
@@ -115,19 +115,19 @@ func TestTxStore_putTxsToQueue(t *testing.T) {
 
 	assert.Equal(3, store.getStatus().Queue)
 
-	hashes := store.popTxsFromQueue(2)
+	txs := store.popTxsFromQueue(2)
 
-	assert.Equal(tx2.Hash(), hashes[0])
-	assert.Equal(tx3.Hash(), hashes[1])
+	assert.Equal(tx2.Hash(), txs[0].Hash())
+	assert.Equal(tx3.Hash(), txs[1].Hash())
 
 	store.putTxsToQueue([][]byte{tx1.Hash()})
 
 	assert.Equal(2, store.getStatus().Queue)
 
-	hashes = store.popTxsFromQueue(2)
+	txs = store.popTxsFromQueue(2)
 
-	assert.Equal(tx1.Hash(), hashes[0])
-	assert.Equal(tx4.Hash(), hashes[1])
+	assert.Equal(tx1.Hash(), txs[0].Hash())
+	assert.Equal(tx4.Hash(), txs[1].Hash())
 }
 
 func TestTxStore_setTxsPending(t *testing.T) {
@@ -157,11 +157,11 @@ func TestTxStore_setTxsPending(t *testing.T) {
 	assert.False(store.txItems[string(tx2.Hash())].inQueue())
 	assert.False(store.txItems[string(tx4.Hash())].inQueue())
 
-	hashes := store.popTxsFromQueue(3)
+	txs := store.popTxsFromQueue(3)
 
-	assert.Equal(2, len(hashes))
-	assert.Equal(tx1.Hash(), hashes[0])
-	assert.Equal(tx3.Hash(), hashes[1])
+	assert.Equal(2, len(txs))
+	assert.Equal(tx1.Hash(), txs[0].Hash())
+	assert.Equal(tx3.Hash(), txs[1].Hash())
 }
 
 func TestTxStore_removeTxs(t *testing.T) {
@@ -191,8 +191,8 @@ func TestTxStore_removeTxs(t *testing.T) {
 	assert.Equal(1, store.getStatus().Queue)
 	assert.Equal(1, store.getStatus().Pending)
 
-	hashes := store.popTxsFromQueue(3)
+	txs := store.popTxsFromQueue(3)
 
-	assert.Equal(1, len(hashes))
-	assert.Equal(tx3.Hash(), hashes[0])
+	assert.Equal(1, len(txs))
+	assert.Equal(tx3.Hash(), txs[0].Hash())
 }

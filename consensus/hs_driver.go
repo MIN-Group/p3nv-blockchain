@@ -42,7 +42,9 @@ func (hsd *hsDriver) CreateLeaf(parent hotstuff.Block, qc hotstuff.QC, height ui
 		SetMerkleRoot(hsd.resources.Storage.GetMerkleRoot()).
 		SetTimestamp(time.Now().UnixNano()).
 		Sign(hsd.resources.Signer)
-
+	if err := hsd.resources.TxPool.StoreTxs(blk.TxList()); err != nil {
+		logger.I().Fatalf("store transactions of block error: %+v", err)
+	}
 	hsd.state.setBlock(blk)
 	return newHsBlock(blk, hsd.state)
 }

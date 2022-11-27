@@ -47,7 +47,7 @@ func WaitTxCommited(node cluster.Node, tx *core.Transaction) error {
 			if status == txpool.TxStatusNotFound {
 				return fmt.Errorf("submited tx status not found")
 			}
-			if status == txpool.TxStatusCommited {
+			if status == txpool.TxStatusCommitted {
 				return nil
 			}
 		}

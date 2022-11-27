@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"github.com/wooyang2018/ppov-blockchain/logger"
 
 	"github.com/wooyang2018/ppov-blockchain/pb"
 	"golang.org/x/crypto/sha3"
@@ -20,6 +21,7 @@ var (
 
 type Batch struct {
 	data            *pb.Batch
+	txList          *TxList
 	proposer        *PublicKey
 	batchQuorumCert *BatchQuorumCert
 }
@@ -87,6 +89,17 @@ func (b *Batch) setData(data *pb.Batch) error {
 		return err
 	}
 	b.proposer = proposer
+
+	txs := make([]*Transaction, len(data.TxList), len(data.TxList))
+	for i, v := range data.TxList {
+		tx := NewTransaction()
+		if err := tx.setData(v); err != nil {
+			return err
+		}
+		txs[i] = tx
+	}
+	b.txList = (*TxList)(&txs)
+
 	return nil
 }
 
@@ -103,8 +116,23 @@ func (b *Batch) SetTimestamp(val int64) *Batch {
 	return b
 }
 
-func (b *Batch) SetTransactions(val [][]byte) *Batch {
-	b.data.Transactions = val
+func (b *Batch) SetTransactions(val []*Transaction) *Batch {
+	hashes := make([][]byte, len(val), len(val))
+	data := make([]*pb.Transaction, len(val), len(val))
+	txs := make([]*Transaction, len(val), len(val))
+	for i, v := range val {
+		hashes[i] = v.Hash()
+		data[i] = v.data
+
+		tx := NewTransaction()
+		if err := tx.setData(v.data); err != nil {
+			logger.I().Errorw("set transaction failed", "error", err)
+		}
+		txs[i] = tx
+	}
+	b.data.Transactions = hashes
+	b.data.TxList = data
+	b.txList = (*TxList)(&txs)
 	return b
 }
 
@@ -121,6 +149,7 @@ func (b *Batch) Proposer() *PublicKey              { return b.proposer }
 func (b *Batch) BatchQuorumCert() *BatchQuorumCert { return b.batchQuorumCert }
 func (b *Batch) Timestamp() int64                  { return b.data.Timestamp }
 func (b *Batch) Transactions() [][]byte            { return b.data.Transactions }
+func (b *Batch) TxList() *TxList                   { return b.txList }
 
 func (b *Batch) Marshal() ([]byte, error) {
 	return proto.Marshal(b.data)
