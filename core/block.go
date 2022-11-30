@@ -199,6 +199,11 @@ func (blk *Block) SetBatchs(val []*Batch) *Block {
 	return blk
 }
 
+func (blk *Block) SetTransactions(val [][]byte) *Block {
+	blk.data.Transactions = val
+	return blk
+}
+
 func (blk *Block) Sign(signer Signer) *Block {
 	blk.proposer = signer.PublicKey()
 	blk.data.Proposer = signer.PublicKey().key
@@ -215,9 +220,9 @@ func (blk *Block) QuorumCert() *QuorumCert { return blk.quorumCert }
 func (blk *Block) ExecHeight() uint64      { return blk.data.ExecHeight }
 func (blk *Block) MerkleRoot() []byte      { return blk.data.MerkleRoot }
 func (blk *Block) Timestamp() int64        { return blk.data.Timestamp }
-func (blk *Block) Batchs() []*Batch        { return blk.batchs }
 func (blk *Block) IsGenesis() bool         { return blk.Height() == 0 }
-func (blk *Block) Transactions() [][]byte  { return blk.transactions }
+func (blk *Block) Batchs() []*Batch        { return blk.batchs }
+func (blk *Block) Transactions() [][]byte  { return blk.data.Transactions }
 func (blk *Block) TxList() *TxList         { return blk.txList }
 
 // Marshal encodes blk as bytes
