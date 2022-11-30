@@ -8,7 +8,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-
 	"github.com/wooyang2018/ppov-blockchain/pb"
 	"golang.org/x/crypto/sha3"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -176,6 +175,11 @@ func (blk *Block) SetBatchs(val []*Batch) *Block {
 	return blk
 }
 
+func (blk *Block) SetTransactions(val [][]byte) *Block {
+	blk.data.Transactions = val
+	return blk
+}
+
 func (blk *Block) Sign(signer Signer) *Block {
 	blk.proposer = signer.PublicKey()
 	blk.data.Proposer = signer.PublicKey().key
@@ -192,23 +196,9 @@ func (blk *Block) QuorumCert() *QuorumCert { return blk.quorumCert }
 func (blk *Block) ExecHeight() uint64      { return blk.data.ExecHeight }
 func (blk *Block) MerkleRoot() []byte      { return blk.data.MerkleRoot }
 func (blk *Block) Timestamp() int64        { return blk.data.Timestamp }
-func (blk *Block) Batchs() []*Batch        { return blk.batchs }
 func (blk *Block) IsGenesis() bool         { return blk.Height() == 0 }
-
-func (blk *Block) Transactions() [][]byte {
-	//使用集合对Batch中的交易进行去重
-	txSet := make(map[string]struct{})
-	txList := make([][]byte, 0)
-	for _, batch := range blk.Batchs() {
-		for _, tx := range batch.Transactions() {
-			txSet[string(tx)] = struct{}{}
-		}
-	}
-	for tx, _ := range txSet {
-		txList = append(txList, []byte(tx))
-	}
-	return txList
-}
+func (blk *Block) Batchs() []*Batch        { return blk.batchs }
+func (blk *Block) Transactions() [][]byte  { return blk.data.Transactions }
 
 // Marshal encodes blk as bytes
 func (blk *Block) Marshal() ([]byte, error) {

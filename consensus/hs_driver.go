@@ -32,12 +32,14 @@ func (hsd *hsDriver) MajorityValidatorCount() int {
 
 func (hsd *hsDriver) CreateLeaf(parent hotstuff.Block, qc hotstuff.QC, height uint64) hotstuff.Block {
 	batchs := hsd.leaderState.popReadyBatch()
+	txs := hsd.getBatchTxs(batchs)
 	//core.Block的链式调用
 	blk := core.NewBlock().
 		SetParentHash(parent.(*hsBlock).block.Hash()).
 		SetQuorumCert(qc.(*hsQC).qc).
 		SetHeight(height).
 		SetBatchs(batchs).
+		SetTransactions(txs).
 		SetExecHeight(hsd.resources.Storage.GetBlockHeight()).
 		SetMerkleRoot(hsd.resources.Storage.GetMerkleRoot()).
 		SetTimestamp(time.Now().UnixNano()).
@@ -45,6 +47,24 @@ func (hsd *hsDriver) CreateLeaf(parent hotstuff.Block, qc hotstuff.QC, height ui
 
 	hsd.state.setBlock(blk)
 	return newHsBlock(blk, hsd.state)
+}
+
+func (hsd *hsDriver) getBatchTxs(val []*core.Batch) [][]byte {
+	txSet := make(map[string]struct{})
+	txList := make([][]byte, 0)
+	for _, batch := range val {
+		for _, hash := range batch.Transactions() {
+			if _, ok := txSet[string(hash)]; ok {
+				continue //重复交易则跳过
+			}
+			if hsd.resources.Storage.HasTx(hash) {
+				continue //已提交交易则跳过
+			}
+			txSet[string(hash)] = struct{}{} //集合去重
+			txList = append(txList, hash)
+		}
+	}
+	return txList
 }
 
 func (hsd *hsDriver) CreateQC(hsVotes []hotstuff.Vote) hotstuff.QC {
