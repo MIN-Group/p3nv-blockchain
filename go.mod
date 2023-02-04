@@ -3,7 +3,7 @@ module github.com/wooyang2018/ppov-blockchain
 go 1.18
 
 require (
-	github.com/fatih/color v1.13.0
+	github.com/fatih/color v1.14.1
 	github.com/gin-gonic/gin v1.8.2
 	github.com/libp2p/go-libp2p v0.24.2
 	github.com/multiformats/go-multiaddr v0.8.0
@@ -67,8 +67,8 @@ require (
 	github.com/marten-seemann/qtls-go1-18 v0.1.3 // indirect
 	github.com/marten-seemann/qtls-go1-19 v0.1.1 // indirect
 	github.com/marten-seemann/tcp v0.0.0-20210406111302-dfbc87cc63fd // indirect
-	github.com/mattn/go-colorable v0.1.9 // indirect
-	github.com/mattn/go-isatty v0.0.16 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mattn/go-pointer v0.0.1 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/miekg/dns v1.1.50 // indirect
