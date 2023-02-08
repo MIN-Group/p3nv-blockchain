@@ -21,20 +21,24 @@ const (
 	FlagBroadcastTx = "broadcast-tx"
 
 	// storage
-	FlagMerkleBranchFactor = "storage-merkle-branch-factor"
+	FlagMerkleBranchFactor = "storage-merkleBranchFactor"
 
 	// execution
-	FlagTxExecTimeout       = "execution-tx-exec-timeout"
-	FlagExecConcurrentLimit = "execution-concurrent-limit"
+	FlagTxExecTimeout       = "execution-txExecTimeout"
+	FlagExecConcurrentLimit = "execution-concurrentLimit"
 
 	// consensus
-	FlagChainID        = "chainID"
-	FlagBlockTxLimit   = "consensus-block-tx-limit"
-	FlagTxWaitTime     = "consensus-tx-wait-time"
-	FlagProposeTimeout = "consensus-propose-timeout"
-	FlagBlockDelay     = "consensus-block-delay"
-	FlagViewWidth      = "consensus-view-width"
-	FlagLeaderTimeout  = "consensus-leader-timeout"
+	FlagChainID         = "chainID"
+	FlagBatchTxLimit    = "consensus-batchTxLimit"
+	FlagBlockBatchLimit = "consensus-blockBatchLimit"
+	FlagVoteBatchLimit  = "consensus-voteBatchLimit"
+	FlagTxWaitTime      = "consensus-txWaitTime"
+	FlagBatchWaitTime   = "consensus-batchWaitTime"
+	FlagProposeTimeout  = "consensus-proposeTimeout"
+	FlagBatchTimeout    = "consensus-batchTimeout"
+	FlagBlockDelay      = "consensus-blockDelay"
+	FlagViewWidth       = "consensus-viewWidth"
+	FlagLeaderTimeout   = "consensus-leaderTimeout"
 )
 
 var nodeConfig = node.DefaultConfig
@@ -88,16 +92,32 @@ func init() {
 		"chainid is used to create genesis block")
 
 	rootCmd.Flags().IntVar(&nodeConfig.ConsensusConfig.BatchTxLimit,
-		FlagBlockTxLimit, nodeConfig.ConsensusConfig.BatchTxLimit,
-		"maximum tx count in a block")
+		FlagBatchTxLimit, nodeConfig.ConsensusConfig.BatchTxLimit,
+		"maximum tx count in a batch")
+
+	rootCmd.Flags().IntVar(&nodeConfig.ConsensusConfig.BlockBatchLimit,
+		FlagBlockBatchLimit, nodeConfig.ConsensusConfig.BlockBatchLimit,
+		"maximum batch count in a block")
+
+	rootCmd.Flags().IntVar(&nodeConfig.ConsensusConfig.VoteBatchLimit,
+		FlagVoteBatchLimit, nodeConfig.ConsensusConfig.VoteBatchLimit,
+		"batch count in a batch vote")
 
 	rootCmd.Flags().DurationVar(&nodeConfig.ConsensusConfig.TxWaitTime,
 		FlagTxWaitTime, nodeConfig.ConsensusConfig.TxWaitTime,
 		"block creation delay if no transactions in the pool")
 
+	rootCmd.Flags().DurationVar(&nodeConfig.ConsensusConfig.BatchWaitTime,
+		FlagBatchWaitTime, nodeConfig.ConsensusConfig.BatchWaitTime,
+		"maximum delay the leader waits for voting on a batch")
+
 	rootCmd.Flags().DurationVar(&nodeConfig.ConsensusConfig.ProposeTimeout,
 		FlagProposeTimeout, nodeConfig.ConsensusConfig.ProposeTimeout,
 		"duration to wait to propose next block if leader cannot create qc")
+
+	rootCmd.Flags().DurationVar(&nodeConfig.ConsensusConfig.BatchTimeout,
+		FlagBatchTimeout, nodeConfig.ConsensusConfig.BatchTimeout,
+		"duration to wait to propose next batch if leader cannot create qc")
 
 	rootCmd.Flags().DurationVar(&nodeConfig.ConsensusConfig.BlockDelay,
 		FlagBlockDelay, nodeConfig.ConsensusConfig.BlockDelay,

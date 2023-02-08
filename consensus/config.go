@@ -14,18 +14,19 @@ type Config struct {
 	// maximum batch count in a block
 	BlockBatchLimit int
 
-	// maximum batch count in batch vote
+	//batch count in a batch vote
 	VoteBatchLimit int
 
 	// block creation delay if no transactions in the pool
 	TxWaitTime time.Duration
 
-	// Leader等待对某个Batch的投票的最长时间
+	// maximum delay the leader waits for voting on a batch
 	BatchWaitTime time.Duration
 
-	// for leader, delay to propose next block if she cannot create qc
+	// duration to wait to propose next block if leader cannot create qc
 	ProposeTimeout time.Duration
 
+	// duration to wait to propose next batch if leader cannot create qc
 	BatchTimeout time.Duration
 
 	// minimum delay between each block (i.e, it can define maximum block rate)
@@ -45,8 +46,8 @@ var DefaultConfig = Config{
 	TxWaitTime:      1 * time.Second,
 	BatchWaitTime:   3 * time.Second,
 	ProposeTimeout:  2000 * time.Millisecond,
-	BatchTimeout:    400 * time.Millisecond,
-	BlockDelay:      40 * time.Millisecond, // maximum block rate = 25 blk per sec
+	BatchTimeout:    500 * time.Millisecond,
+	BlockDelay:      200 * time.Millisecond, // maximum block rate = 5 blk per sec
 	ViewWidth:       90 * time.Second,
 	LeaderTimeout:   30 * time.Second,
 }

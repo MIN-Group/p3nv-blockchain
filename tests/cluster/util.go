@@ -152,6 +152,7 @@ func AddPPoVFlags(cmd *exec.Cmd, config *node.Config) {
 	cmd.Args = append(cmd.Args, "-d", config.Datadir)
 	cmd.Args = append(cmd.Args, "-p", strconv.Itoa(config.Port))
 	cmd.Args = append(cmd.Args, "-P", strconv.Itoa(config.APIPort))
+
 	if config.Debug {
 		cmd.Args = append(cmd.Args, "--debug")
 	}
@@ -159,34 +160,47 @@ func AddPPoVFlags(cmd *exec.Cmd, config *node.Config) {
 		cmd.Args = append(cmd.Args, "--broadcast-tx")
 	}
 
-	cmd.Args = append(cmd.Args, "--storage-merkle-branch-factor",
+	cmd.Args = append(cmd.Args, "--storage-merkleBranchFactor",
 		strconv.Itoa(int(config.StorageConfig.MerkleBranchFactor)))
 
-	cmd.Args = append(cmd.Args, "--execution-tx-exec-timeout",
+	cmd.Args = append(cmd.Args, "--execution-txExecTimeout",
 		config.ExecutionConfig.TxExecTimeout.String(),
 	)
-	cmd.Args = append(cmd.Args, "--execution-concurrent-limit",
+
+	cmd.Args = append(cmd.Args, "--execution-concurrentLimit",
 		strconv.Itoa(config.ExecutionConfig.ConcurrentLimit))
 
 	cmd.Args = append(cmd.Args, "--chainID",
 		strconv.Itoa(int(config.ConsensusConfig.ChainID)))
 
-	cmd.Args = append(cmd.Args, "--consensus-block-tx-limit",
+	cmd.Args = append(cmd.Args, "--consensus-batchTxLimit",
 		strconv.Itoa(config.ConsensusConfig.BatchTxLimit))
 
-	cmd.Args = append(cmd.Args, "--consensus-tx-wait-time",
+	cmd.Args = append(cmd.Args, "--consensus-blockBatchLimit",
+		strconv.Itoa(config.ConsensusConfig.BlockBatchLimit))
+
+	cmd.Args = append(cmd.Args, "--consensus-voteBatchLimit",
+		strconv.Itoa(config.ConsensusConfig.VoteBatchLimit))
+
+	cmd.Args = append(cmd.Args, "--consensus-txWaitTime",
 		config.ConsensusConfig.TxWaitTime.String())
 
-	cmd.Args = append(cmd.Args, "--consensus-propose-timeout",
+	cmd.Args = append(cmd.Args, "--consensus-batchWaitTime",
+		config.ConsensusConfig.BatchWaitTime.String())
+
+	cmd.Args = append(cmd.Args, "--consensus-proposeTimeout",
 		config.ConsensusConfig.ProposeTimeout.String())
 
-	cmd.Args = append(cmd.Args, "--consensus-block-delay",
+	cmd.Args = append(cmd.Args, "--consensus-batchTimeout",
+		config.ConsensusConfig.BatchTimeout.String())
+
+	cmd.Args = append(cmd.Args, "--consensus-blockDelay",
 		config.ConsensusConfig.BlockDelay.String())
 
-	cmd.Args = append(cmd.Args, "--consensus-view-width",
+	cmd.Args = append(cmd.Args, "--consensus-viewWidth",
 		config.ConsensusConfig.ViewWidth.String())
 
-	cmd.Args = append(cmd.Args, "--consensus-leader-timeout",
+	cmd.Args = append(cmd.Args, "--consensus-leaderTimeout",
 		config.ConsensusConfig.LeaderTimeout.String())
 }
 
