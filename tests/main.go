@@ -21,8 +21,8 @@ import (
 
 var (
 	WorkDir                  = "./workdir"
-	NodeCount                = 4
-	WorkerProportion float32 = 1
+	NodeCount                = 7
+	WorkerProportion float32 = 0.5
 	VoterProportion  float32 = 1
 
 	LoadTxPerSec     = 100

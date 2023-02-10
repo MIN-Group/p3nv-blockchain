@@ -44,7 +44,7 @@ var DefaultConfig = Config{
 	VoteBatchLimit:  4,
 	TxWaitTime:      1 * time.Second,
 	BatchWaitTime:   3 * time.Second,
-	ProposeTimeout:  500 * time.Millisecond,
+	ProposeTimeout:  2000 * time.Millisecond,
 	BatchTimeout:    400 * time.Millisecond,
 	BlockDelay:      40 * time.Millisecond, // maximum block rate = 25 blk per sec
 	ViewWidth:       90 * time.Second,
