@@ -20,17 +20,24 @@ import (
 	"github.com/wooyang2018/ppov-blockchain/node"
 )
 
-func ReadRemoteHosts(hostsPath string, nodeCount int) ([]string, error) {
+func ReadRemoteHosts(hostsPath string, nodeCount int) ([]string, []string, error) {
 	raw, err := os.ReadFile(hostsPath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	hosts := strings.Split(string(raw), "\n")
-	if len(hosts) < nodeCount {
-		return nil, fmt.Errorf("not enough hosts, %d | %d",
-			len(hosts), nodeCount)
+	lines := strings.Split(string(raw), "\n")
+	if len(lines) < nodeCount {
+		return nil, nil, fmt.Errorf("not enough hosts, %d | %d",
+			len(lines), nodeCount)
 	}
-	return hosts[:nodeCount], nil
+	hosts := make([]string, nodeCount)
+	workDirs := make([]string, nodeCount)
+	for i := 0; i < nodeCount; i++ {
+		words := strings.Split(lines[i], "\t")
+		hosts[i] = words[0]
+		workDirs[i] = words[1]
+	}
+	return hosts, workDirs, nil
 }
 
 func WriteNodeKey(datadir string, key *core.PrivateKey) error {
