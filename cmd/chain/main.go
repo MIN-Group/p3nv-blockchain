@@ -39,6 +39,7 @@ const (
 	FlagBlockDelay      = "consensus-blockDelay"
 	FlagViewWidth       = "consensus-viewWidth"
 	FlagLeaderTimeout   = "consensus-leaderTimeout"
+	FlagBenchmarkPath   = "consensus-benchmarkPath"
 )
 
 var nodeConfig = node.DefaultConfig
@@ -130,4 +131,8 @@ func init() {
 	rootCmd.Flags().DurationVar(&nodeConfig.ConsensusConfig.LeaderTimeout,
 		FlagLeaderTimeout, nodeConfig.ConsensusConfig.LeaderTimeout,
 		"leader must create next qc in this duration")
+
+	rootCmd.Flags().StringVar(&nodeConfig.ConsensusConfig.BenchmarkPath,
+		FlagBenchmarkPath, nodeConfig.ConsensusConfig.BenchmarkPath,
+		"path to save the benchmark log of the consensus algorithm")
 }

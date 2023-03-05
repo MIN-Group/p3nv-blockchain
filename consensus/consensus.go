@@ -4,6 +4,7 @@
 package consensus
 
 import (
+	"os"
 	"time"
 
 	"github.com/wooyang2018/ppov-blockchain/core"
@@ -12,18 +13,16 @@ import (
 )
 
 type Consensus struct {
-	resources *Resources
-	config    Config
-
-	startTime int64
-
-	state     *state
-	hsDriver  *hsDriver
-	hotstuff  *hotstuff.Hotstuff
-	validator *validator
-	pacemaker *pacemaker
-	rotator   *rotator
-
+	resources   *Resources
+	config      Config
+	startTime   int64
+	logfile     *os.File
+	state       *state
+	hsDriver    *hsDriver
+	hotstuff    *hotstuff.Hotstuff
+	validator   *validator
+	pacemaker   *pacemaker
+	rotator     *rotator
 	voterState  *voterState
 	leaderState *leaderState
 }
@@ -61,12 +60,20 @@ func (cons *Consensus) start() {
 	} else {
 		cons.setupState(b0)
 	}
+	if cons.config.BenchmarkPath != "" {
+		var err error
+		cons.logfile, err = os.Create(cons.config.BenchmarkPath)
+		if err != nil {
+			logger.I().Warnf("create benchmark log file failed, %+v", err.Error())
+		}
+	}
 	cons.setupPPovState()
 	cons.setupHsDriver()
 	cons.setupHotstuff(b0, q0)
 	cons.setupValidator()
 	cons.setupPacemaker()
 	cons.setupRotator()
+
 	status := cons.GetStatus()
 	logger.I().Infow("starting consensus", "leader", status.LeaderIndex, "bLeaf", status.BLeaf, "qc", status.QCHigh)
 
@@ -82,6 +89,9 @@ func (cons *Consensus) stop() {
 	cons.pacemaker.stop()
 	cons.rotator.stop()
 	cons.validator.stop()
+	if cons.logfile != nil {
+		cons.logfile.Close()
+	}
 }
 
 func (cons *Consensus) setupState(b0 *core.Block) {
@@ -120,6 +130,7 @@ func (cons *Consensus) setupHsDriver() {
 func (cons *Consensus) setupHotstuff(b0 *core.Block, q0 *core.QuorumCert) {
 	cons.hotstuff = hotstuff.New(
 		cons.hsDriver,
+		cons.logfile,
 		newHsBlock(b0, cons.state),
 		newHsQC(q0, cons.state),
 	)

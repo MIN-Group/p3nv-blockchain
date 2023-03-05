@@ -209,6 +209,9 @@ func AddPPoVFlags(cmd *exec.Cmd, config *node.Config) {
 
 	cmd.Args = append(cmd.Args, "--consensus-leaderTimeout",
 		config.ConsensusConfig.LeaderTimeout.String())
+
+	cmd.Args = append(cmd.Args, "--consensus-benchmarkPath",
+		config.ConsensusConfig.BenchmarkPath)
 }
 
 func PickUniqueRandoms(total, count int) []int {
