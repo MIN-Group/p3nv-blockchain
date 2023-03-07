@@ -5,6 +5,7 @@ package txpool
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 
 	"github.com/wooyang2018/ppov-blockchain/core"
@@ -131,9 +132,10 @@ func (pool *TxPool) subscribeTxs() {
 }
 
 func (pool *TxPool) addTxList(txList *core.TxList) error {
-	jobCh := make(chan *core.Transaction)
+	jobCh := make(chan *core.Transaction, len(*txList))
 	defer close(jobCh)
 	out := make(chan error, len(*txList))
+	defer close(out)
 
 	for i := 0; i < 50; i++ {
 		go pool.workerAddNewTx(jobCh, out)
@@ -213,7 +215,8 @@ func (pool *TxPool) getTxsToExecute(hashes [][]byte) ([]*core.Transaction, [][]b
 			} else {
 				// tx not found in local node
 				// all txs from accepted blocks should be sync
-				logger.I().Fatalw("missing tx to execute", "tx", hash)
+				logger.I().Fatalw("missing tx to execute",
+					"tx", base64.StdEncoding.EncodeToString(tx.Hash()))
 			}
 		}
 	}

@@ -12,13 +12,13 @@ import (
 
 type TxPool interface {
 	SubmitTx(tx *core.Transaction) error
+	StoreTxs(txs *core.TxList) error
 	PopTxsFromQueue(max int) []*core.Transaction
 	SetTxsPending(hashes [][]byte)
 	GetTxsToExecute(hashes [][]byte) ([]*core.Transaction, [][]byte)
 	RemoveTxs(hashes [][]byte)
 	PutTxsToQueue(hashes [][]byte)
 	SyncTxs(peer *core.PublicKey, hashes [][]byte) error
-	StoreTxs(txs *core.TxList) error
 	GetTx(hash []byte) *core.Transaction
 	GetTxStatus(hash []byte) txpool.TxStatus
 	GetStatus() txpool.Status
