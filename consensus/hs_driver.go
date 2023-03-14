@@ -31,8 +31,15 @@ func (hsd *hsDriver) MajorityValidatorCount() int {
 }
 
 func (hsd *hsDriver) CreateLeaf(parent hotstuff.Block, qc hotstuff.QC, height uint64) hotstuff.Block {
-	headers := hsd.leaderState.popReadyHeaders()
-	txs := hsd.extractBatchTxs(headers)
+	var txs [][]byte
+	var headers []*core.BatchHeader
+	if ExecuteTxFlag {
+		headers = hsd.leaderState.popReadyHeaders()
+		txs = hsd.extractBatchTxs(headers)
+	} else {
+		//TODO 待实现
+		txs = hsd.resources.TxPool.GetTxsFromQueue(hsd.config.BatchTxLimit)
+	}
 	//core.Block的链式调用
 	blk := core.NewBlock().
 		SetParentHash(parent.(*hsBlock).block.Hash()).
@@ -119,39 +126,44 @@ func (hsd *hsDriver) delayVoteWhenNoTxs() {
 func (hsd *hsDriver) Commit(hsBlk hotstuff.Block) {
 	bexe := hsBlk.(*hsBlock).block
 	start := time.Now()
-	txs, old := hsd.resources.TxPool.GetTxsToExecute(bexe.Transactions())
-	logger.I().Debugw("committing block", "height", bexe.Height(), "txs", len(txs))
-	bcm, txcs := hsd.resources.Execution.Execute(bexe, txs)
-	bcm.SetOldBlockTxs(old)
-	data := &storage.CommitData{
-		Block:        bexe,
-		QC:           hsd.state.getQC(bexe.Hash()),
-		Transactions: txs,
-		BlockCommit:  bcm,
-		TxCommits:    txcs,
+	rawTxs := bexe.Transactions()
+	if ExecuteTxFlag {
+		txs, old := hsd.resources.TxPool.GetTxsToExecute(rawTxs)
+		logger.I().Debugw("committing block", "height", bexe.Height(), "txs", len(txs))
+		bcm, txcs := hsd.resources.Execution.Execute(bexe, txs)
+		bcm.SetOldBlockTxs(old)
+		data := &storage.CommitData{
+			Block:        bexe,
+			QC:           hsd.state.getQC(bexe.Hash()),
+			Transactions: txs,
+			BlockCommit:  bcm,
+			TxCommits:    txcs,
+		}
+		err := hsd.resources.Storage.Commit(data)
+		if err != nil {
+			logger.I().Fatalf("commit storage error: %+v", err)
+		}
 	}
-	err := hsd.resources.Storage.Commit(data)
-	if err != nil {
-		logger.I().Fatalf("commit storage error: %+v", err)
-	}
-	hsd.state.addCommittedTxCount(len(txs))
+	hsd.state.addCommittedTxCount(len(rawTxs))
 	hsd.cleanStateOnCommitted(bexe)
 	logger.I().Debugw("committed bock",
 		"height", bexe.Height(),
 		"batches", len(bexe.BatchHeaders()),
-		"txs", len(txs),
+		"txs", len(rawTxs),
 		"elapsed", time.Since(start))
 }
 
 func (hsd *hsDriver) cleanStateOnCommitted(bexec *core.Block) {
-	// qc for bexe is no longer needed here after committed to storage
+	// qc for bexec is no longer needed here after committed to storage
 	hsd.state.deleteQC(bexec.Hash())
-	hsd.resources.TxPool.RemoveTxs(bexec.Transactions())
+	if ExecuteTxFlag {
+		hsd.resources.TxPool.RemoveTxs(bexec.Transactions())
+	}
 	hsd.state.setCommittedBlock(bexec)
 
-	folks := hsd.state.getUncommittedOlderBlocks(bexec)
-	for _, blk := range folks {
-		// put transactions from folked block back to queue
+	blks := hsd.state.getUncommittedOlderBlocks(bexec)
+	for _, blk := range blks {
+		// put transactions from forked block back to queue
 		hsd.resources.TxPool.PutTxsToQueue(blk.Transactions())
 		hsd.state.deleteBlock(blk.Hash())
 		hsd.state.deleteQC(blk.Hash())

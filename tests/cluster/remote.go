@@ -31,7 +31,8 @@ type RemoteFactoryParams struct {
 	KeySSH    string
 	HostsPath string // file path to host ip addresses
 
-	SetupRequired bool
+	SetupRequired   bool
+	InstallRequired bool
 
 	NetworkDevice string
 }
@@ -114,6 +115,17 @@ func (ftry *RemoteFactory) setupRemoteServers() error {
 }
 
 func (ftry *RemoteFactory) setupRemoteServerOne(i int) error {
+	if ftry.params.InstallRequired {
+		cmd := exec.Command("ssh",
+			"-i", ftry.params.KeySSH,
+			fmt.Sprintf("%s@%s", ftry.params.LoginName, ftry.hosts[i]),
+			"sudo", "apt", "update", ";",
+			"sudo", "apt", "install", "-y", "dstat", ";",
+		)
+		if err := RunCommand(cmd); err != nil {
+			return err
+		}
+	}
 	// also kills remaining effect and nodes to make sure clean environment
 	cmd := exec.Command("ssh",
 		"-i", ftry.params.KeySSH,
@@ -121,8 +133,6 @@ func (ftry *RemoteFactory) setupRemoteServerOne(i int) error {
 		"sudo", "tc", "qdisc", "del", "dev", ftry.params.NetworkDevice, "root", ";",
 		"sudo", "killall", "chain", ";",
 		"sudo", "killall", "dstat", ";",
-		"sudo", "apt", "update", ";",
-		"sudo", "apt", "install", "-y", "dstat", ";",
 		"mkdir", ftry.workDirs[i], ";",
 		"cd", ftry.workDirs[i], ";",
 		"rm", "-r", "template",
