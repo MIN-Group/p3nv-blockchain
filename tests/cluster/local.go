@@ -139,6 +139,7 @@ func (node *LocalNode) Stop() {
 	}
 	node.setRunning(false)
 	node.cmd.Process.Signal(syscall.SIGINT)
+	node.cmd.Process.Wait()
 	node.logFile.Close()
 }
 
