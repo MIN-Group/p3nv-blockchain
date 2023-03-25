@@ -1,4 +1,5 @@
 // Copyright (C) 2021 Aung Maw
+// Copyright (C) 2023 Wooyang2018
 // Licensed under the GNU General Public License v3.0
 
 package txpool
@@ -149,7 +150,7 @@ func TestTxPool_SubscribeTxList(t *testing.T) {
 
 	txEmitter.Emit(&core.TxList{tx1, tx2, tx3})
 
-	time.Sleep(20 * time.Millisecond)
+	time.Sleep(30 * time.Millisecond)
 
 	assert.Equal(2, pool.GetStatus().Queue)
 	storage.AssertExpectations(t)

@@ -1,4 +1,5 @@
 // Copyright (C) 2021 Aung Maw
+// Copyright (C) 2023 Wooyang2018
 // Licensed under the GNU General Public License v3.0
 
 package consensus
@@ -97,7 +98,7 @@ func TestHsDriver_CreateLeaf(t *testing.T) {
 func TestHsDriver_VoteBlock(t *testing.T) {
 	hsd := setupTestHsDriver()
 	hsd.checkTxDelay = time.Millisecond
-	hsd.config.TxWaitTime = 8 * time.Millisecond
+	hsd.config.TxWaitTime = 10 * time.Millisecond
 
 	proposer := core.GenerateKey(nil)
 	blk := core.NewBlock().Sign(proposer)
