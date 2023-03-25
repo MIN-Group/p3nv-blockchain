@@ -44,6 +44,9 @@ func TestHsDriver_TestMajorityCount(t *testing.T) {
 }
 
 func TestHsDriver_CreateLeaf(t *testing.T) {
+	if !ExecuteTxFlag {
+		t.Skip("skipping execution of TestHsDriver_CreateLeaf because ExecuteTxFlag is set to false")
+	}
 	hsd := setupTestHsDriver()
 	parent := newHsBlock(core.NewBlock().Sign(hsd.resources.Signer), hsd.state)
 	hsd.state.setBlock(parent.(*hsBlock).block)
@@ -94,7 +97,7 @@ func TestHsDriver_CreateLeaf(t *testing.T) {
 func TestHsDriver_VoteBlock(t *testing.T) {
 	hsd := setupTestHsDriver()
 	hsd.checkTxDelay = time.Millisecond
-	hsd.config.TxWaitTime = 40 * time.Millisecond
+	hsd.config.TxWaitTime = 8 * time.Millisecond
 
 	proposer := core.GenerateKey(nil)
 	blk := core.NewBlock().Sign(proposer)
@@ -138,6 +141,9 @@ func TestHsDriver_VoteBlock(t *testing.T) {
 }
 
 func TestHsDriver_Commit(t *testing.T) {
+	if !ExecuteTxFlag {
+		t.Skip("skipping execution of TestHsDriver_Commit because ExecuteTxFlag is set to false")
+	}
 	hsd := setupTestHsDriver()
 	parent := core.NewBlock().SetHeight(10).Sign(hsd.resources.Signer)
 	batch := core.NewBatch().Header().SetTransactions([][]byte{[]byte("txfromfolk")}).Sign(hsd.resources.Signer)

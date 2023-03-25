@@ -23,13 +23,23 @@ func (m *MockTxPool) SubmitTx(tx *core.Transaction) error {
 	return args.Error(0)
 }
 
-func (m *MockTxPool) SetTxsPending(hashes [][]byte) {
-	m.Called(hashes)
+func (m *MockTxPool) StoreTxs(txs *core.TxList) error {
+	args := m.Called(txs)
+	return args.Error(0)
 }
 
 func (m *MockTxPool) PopTxsFromQueue(max int) []*core.Transaction {
 	args := m.Called(max)
 	return castTransactions(args.Get(0))
+}
+
+func (m *MockTxPool) GetTxsFromQueue(max int) [][]byte {
+	args := m.Called(max)
+	return castBytesBytes(args.Get(0))
+}
+
+func (m *MockTxPool) SetTxsPending(hashes [][]byte) {
+	m.Called(hashes)
 }
 
 func (m *MockTxPool) GetTxsToExecute(hashes [][]byte) ([]*core.Transaction, [][]byte) {
@@ -47,11 +57,6 @@ func (m *MockTxPool) PutTxsToQueue(hashes [][]byte) {
 
 func (m *MockTxPool) SyncTxs(peer *core.PublicKey, hashes [][]byte) error {
 	args := m.Called(peer, hashes)
-	return args.Error(0)
-}
-
-func (m *MockTxPool) StoreTxs(txs *core.TxList) error {
-	args := m.Called(txs)
 	return args.Error(0)
 }
 
@@ -193,6 +198,10 @@ func (m *MockExecution) Execute(
 ) (*core.BlockCommit, []*core.TxCommit) {
 	args := m.Called(blk, txs)
 	return castBlockCommit(args.Get(0)), castTxCommits(args.Get(1))
+}
+
+func (m *MockExecution) MockExecute(blk *core.Block) (*core.BlockCommit, []*core.TxCommit) {
+	return nil, nil
 }
 
 func castBytes(val interface{}) []byte {
