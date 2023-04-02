@@ -6,7 +6,7 @@ package consensus
 
 import "time"
 
-const ExecuteTxFlag = false //set to false when benchmark test
+const ExecuteTxFlag = true //set to false when benchmark test
 
 type Config struct {
 	ChainID int64
@@ -46,7 +46,7 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	BatchTxLimit:    200,
+	BatchTxLimit:    500,
 	BlockBatchLimit: 4,
 	VoteBatchLimit:  4,
 	TxWaitTime:      1 * time.Second,

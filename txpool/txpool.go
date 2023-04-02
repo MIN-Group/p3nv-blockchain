@@ -77,7 +77,7 @@ func (pool *TxPool) SyncTxs(peer *core.PublicKey, hashes [][]byte) error {
 }
 
 func (pool *TxPool) StoreTxs(txs *core.TxList) error {
-	return pool.addTxList(txs)
+	return pool.storeTxs(txs)
 }
 
 func (pool *TxPool) PopTxsFromQueue(max int) []*core.Transaction {
@@ -203,6 +203,24 @@ func (pool *TxPool) requestTxList(peer *core.PublicKey, hashes [][]byte) (*core.
 		}
 	}
 	return txList, nil
+}
+
+func (pool *TxPool) storeTxs(txs *core.TxList) error {
+	missing := make([]*core.Transaction, 0)
+	for _, tx := range *txs {
+		if !pool.storage.HasTx(tx.Hash()) && pool.store.getTx(tx.Hash()) == nil {
+			missing = append(missing, tx)
+			if pool.broadcastTx {
+				pool.broadcaster.queue <- tx
+			}
+		}
+	}
+	logger.I().Debugw("store txs into txpool", "txs", len(missing))
+	if len(missing) == 0 {
+		return nil
+	}
+	txList := core.TxList(missing)
+	return pool.addTxList(&txList)
 }
 
 func (pool *TxPool) getTxsToExecute(hashes [][]byte) ([]*core.Transaction, [][]byte) {
