@@ -34,9 +34,9 @@ func (m *MockTxPool) PopTxsFromQueue(max int) []*core.Transaction {
 	return castTransactions(args.Get(0))
 }
 
-func (m *MockTxPool) GetTxsFromQueue(max int) [][]byte {
+func (m *MockTxPool) GetTxsFromQueue(max int) []*core.Transaction {
 	args := m.Called(max)
-	return castBytesBytes(args.Get(0))
+	return castTransactions(args.Get(0))
 }
 
 func (m *MockTxPool) SetTxsPending(hashes [][]byte) {

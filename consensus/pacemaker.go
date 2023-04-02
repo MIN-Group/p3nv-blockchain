@@ -122,7 +122,7 @@ func (pm *pacemaker) newBlock() {
 	}
 
 	blk := pm.hotstuff.OnPropose()
-	logger.I().Debugw("proposed block", "height", blk.Height(), "qc", qcRefHeight(blk.Justify()))
+	logger.I().Debugw("proposed block", "height", blk.Height(), "qc", qcRefHeight(blk.Justify()), "txs", len(blk.Transactions()))
 	vote := blk.(*hsBlock).block.ProposerVote()
 	pm.hotstuff.OnReceiveVote(newHsVote(vote, pm.state))
 	pm.hotstuff.Update(blk)
@@ -142,7 +142,12 @@ func (pm *pacemaker) newBatch() {
 		return
 	}
 
-	txs := pm.resources.TxPool.PopTxsFromQueue(pm.config.BatchTxLimit)
+	var txs []*core.Transaction
+	if ExecuteTxFlag {
+		txs = pm.resources.TxPool.PopTxsFromQueue(pm.config.BatchTxLimit)
+	} else {
+		txs = pm.resources.TxPool.GetTxsFromQueue(pm.config.BatchTxLimit)
+	}
 	if len(txs) == 0 {
 		return
 	}
@@ -152,5 +157,5 @@ func (pm *pacemaker) newBatch() {
 	pm.voterState.addBatch(batch.Header())
 	pm.resources.MsgSvc.BroadcastBatch(batch)
 	widx := pm.resources.VldStore.GetWorkerIndex(signer.PublicKey())
-	logger.I().Debugw("generated batch", "txs", len(batch.Header().Transactions()), "worker", widx)
+	logger.I().Debugw("generated batch", "worker", widx, "txs", len(batch.Header().Transactions()))
 }

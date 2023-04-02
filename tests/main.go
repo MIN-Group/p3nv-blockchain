@@ -190,11 +190,11 @@ func printAndCheckVars() {
 		fmt.Println("SetupClusterTemplate ===> !RunBenchmark")
 		pass = false
 	}
-	if !consensus.ExecuteTxFlag && RunBenchmark {
-		fmt.Println("!consensus.ExecuteTxFlag ===> !RunBenchmark")
+	if !consensus.ExecuteTxFlag && !RunBenchmark {
+		fmt.Println("!consensus.ExecuteTxFlag ===> RunBenchmark")
 		pass = false
 	}
-	if !consensus.ExecuteTxFlag && len(BenchLoads) > 1 {
+	if !ppov && !consensus.ExecuteTxFlag && len(BenchLoads) > 1 {
 		fmt.Println("!consensus.ExecuteTxFlag =?=> len(BenchLoads)=1")
 	}
 	if !RunBenchmark && !consensus.ExecuteTxFlag {

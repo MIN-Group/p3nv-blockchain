@@ -113,7 +113,7 @@ func (store *txStore) popTxsFromQueue(max int) []*core.Transaction {
 	return ret
 }
 
-func (store *txStore) getTxsFromQueue(max int) [][]byte {
+func (store *txStore) getTxsFromQueue(max int) []*core.Transaction {
 	store.mtx.Lock()
 	defer store.mtx.Unlock()
 
@@ -121,10 +121,10 @@ func (store *txStore) getTxsFromQueue(max int) [][]byte {
 	if count == 0 {
 		return nil
 	}
-	ret := make([][]byte, count)
+	ret := make([]*core.Transaction, count)
 	for i := range ret {
 		item := (*store.txq)[i]
-		ret[i] = item.tx.Hash()
+		ret[i] = item.tx
 	}
 	return ret
 }

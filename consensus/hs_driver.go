@@ -32,15 +32,8 @@ func (hsd *hsDriver) MajorityValidatorCount() int {
 }
 
 func (hsd *hsDriver) CreateLeaf(parent hotstuff.Block, qc hotstuff.QC, height uint64) hotstuff.Block {
-	var txs [][]byte
-	var headers []*core.BatchHeader
-	if ExecuteTxFlag {
-		headers = hsd.leaderState.popReadyHeaders()
-		txs = hsd.extractBatchTxs(headers)
-	} else {
-		//TODO 待实现
-		txs = hsd.resources.TxPool.GetTxsFromQueue(hsd.config.BatchTxLimit)
-	}
+	headers := hsd.leaderState.popReadyHeaders()
+	txs := hsd.extractBatchTxs(headers)
 	//core.Block的链式调用
 	blk := core.NewBlock().
 		SetParentHash(parent.(*hsBlock).block.Hash()).
@@ -58,23 +51,27 @@ func (hsd *hsDriver) CreateLeaf(parent hotstuff.Block, qc hotstuff.QC, height ui
 	return newHsBlock(blk, hsd.state)
 }
 
-func (hsd *hsDriver) extractBatchTxs(val []*core.BatchHeader) [][]byte {
-	for _, batch := range val {
-		if err := hsd.resources.TxPool.SyncTxs(batch.Proposer(), batch.Transactions()); err != nil {
-			logger.I().Errorw("sync txs failed", "error", err)
+func (hsd *hsDriver) extractBatchTxs(headers []*core.BatchHeader) [][]byte {
+	if ExecuteTxFlag {
+		for _, batch := range headers {
+			if err := hsd.resources.TxPool.SyncTxs(batch.Proposer(), batch.Transactions()); err != nil {
+				logger.I().Errorw("sync txs failed", "error", err)
+			}
 		}
 	}
 	txSet := make(map[string]struct{})
 	txs := make([][]byte, 0)
-	for _, batch := range val {
+	for _, batch := range headers {
 		for _, hash := range batch.Transactions() {
-			if _, ok := txSet[string(hash)]; ok {
-				continue //重复交易则跳过
+			if ExecuteTxFlag {
+				if _, ok := txSet[string(hash)]; ok {
+					continue //重复交易则跳过
+				}
+				if hsd.resources.Storage.HasTx(hash) {
+					continue //已提交交易则跳过
+				}
+				txSet[string(hash)] = struct{}{} //集合去重
 			}
-			if hsd.resources.Storage.HasTx(hash) {
-				continue //已提交交易则跳过
-			}
-			txSet[string(hash)] = struct{}{} //集合去重
 			txs = append(txs, hash)
 		}
 	}
@@ -98,7 +95,9 @@ func (hsd *hsDriver) BroadcastProposal(hsBlk hotstuff.Block) {
 func (hsd *hsDriver) VoteBlock(hsBlk hotstuff.Block) {
 	blk := hsBlk.(*hsBlock).block
 	vote := blk.Vote(hsd.resources.Signer)
-	hsd.resources.TxPool.SetTxsPending(blk.Transactions())
+	if ExecuteTxFlag {
+		hsd.resources.TxPool.SetTxsPending(blk.Transactions())
+	}
 	hsd.delayVoteWhenNoTxs()
 	proposer := hsd.resources.VldStore.GetWorkerIndex(blk.Proposer())
 	if proposer != hsd.state.getLeaderIndex() {

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/wooyang2018/ppov-blockchain/core"
+	"github.com/wooyang2018/ppov-blockchain/logger"
 )
 
 type voterState struct {
@@ -118,6 +119,7 @@ func (l *leaderState) addBatchVote(vote *core.BatchVote) {
 			batchQC := core.NewBatchQuorumCert().Build(batch.Hash(), l.batchSigns[hash])
 			batch.SetBatchQuorumCert(batchQC)
 			l.batchReadyQ = append(l.batchReadyQ, batch)
+			logger.I().Debugw("generated ready batch", "txs", len(batch.Transactions()))
 			close(l.batchStopCh[hash])
 			delete(l.batchMap, hash)
 			delete(l.batchSigns, hash)
