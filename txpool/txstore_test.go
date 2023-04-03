@@ -18,7 +18,7 @@ func TestTxStore_addNewTx(t *testing.T) {
 
 	tx := core.NewTransaction().Sign(core.GenerateKey(nil))
 	store := newTxStore()
-	store.addNewTx(tx)
+	store.addNewTx(tx, false)
 
 	assert.Equal(1, store.getStatus().Total)
 	assert.Equal(1, store.getStatus().Queue)
@@ -29,7 +29,7 @@ func TestTxStore_addNewTx(t *testing.T) {
 	assert.Equal(0, txItem.index)
 
 	// add the same tx again and should not accept
-	store.addNewTx(tx)
+	store.addNewTx(tx, false)
 
 	assert.Nil(store.getTx([]byte("notexist")))
 	assert.NotNil(store.getTx(tx.Hash()))
@@ -54,13 +54,13 @@ func TestTxStore_popTxsFromQueue(t *testing.T) {
 
 	store := newTxStore()
 
-	store.addNewTx(tx1)
+	store.addNewTx(tx1, false)
 	time.Sleep(1 * time.Microsecond)
-	store.addNewTx(tx2)
+	store.addNewTx(tx2, false)
 	time.Sleep(1 * time.Microsecond)
-	store.addNewTx(tx3)
+	store.addNewTx(tx3, false)
 	time.Sleep(1 * time.Microsecond)
-	store.addNewTx(tx4)
+	store.addNewTx(tx4, false)
 
 	txs := store.popTxsFromQueue(2)
 
@@ -103,13 +103,13 @@ func TestTxStore_putTxsToQueue(t *testing.T) {
 
 	store := newTxStore()
 
-	store.addNewTx(tx1)
+	store.addNewTx(tx1, false)
 	time.Sleep(1 * time.Microsecond)
-	store.addNewTx(tx2)
+	store.addNewTx(tx2, false)
 	time.Sleep(1 * time.Microsecond)
-	store.addNewTx(tx3)
+	store.addNewTx(tx3, false)
 	time.Sleep(1 * time.Microsecond)
-	store.addNewTx(tx4)
+	store.addNewTx(tx4, false)
 
 	store.popTxsFromQueue(3)
 
@@ -143,13 +143,13 @@ func TestTxStore_setTxsPending(t *testing.T) {
 
 	store := newTxStore()
 
-	store.addNewTx(tx1)
+	store.addNewTx(tx1, false)
 	time.Sleep(1 * time.Microsecond)
-	store.addNewTx(tx2)
+	store.addNewTx(tx2, false)
 	time.Sleep(1 * time.Microsecond)
-	store.addNewTx(tx3)
+	store.addNewTx(tx3, false)
 	time.Sleep(1 * time.Microsecond)
-	store.addNewTx(tx4)
+	store.addNewTx(tx4, false)
 
 	store.setTxsPending([][]byte{tx2.Hash(), tx4.Hash()})
 
@@ -177,13 +177,13 @@ func TestTxStore_removeTxs(t *testing.T) {
 
 	store := newTxStore()
 
-	store.addNewTx(tx1)
+	store.addNewTx(tx1, false)
 	time.Sleep(1 * time.Microsecond)
-	store.addNewTx(tx2)
+	store.addNewTx(tx2, false)
 	time.Sleep(1 * time.Microsecond)
-	store.addNewTx(tx3)
+	store.addNewTx(tx3, false)
 	time.Sleep(1 * time.Microsecond)
-	store.addNewTx(tx4)
+	store.addNewTx(tx4, false)
 
 	store.popTxsFromQueue(2)
 

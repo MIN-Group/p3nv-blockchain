@@ -98,6 +98,7 @@ func (store *txStore) addNewTx(tx *core.Transaction, pending bool) {
 	}
 	store.txItems[string(tx.Hash())] = item
 }
+
 func (store *txStore) popTxsFromQueue(max int) []*core.Transaction {
 	store.mtx.Lock()
 	defer store.mtx.Unlock()

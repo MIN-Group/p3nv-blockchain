@@ -29,6 +29,11 @@ func (m *MockTxPool) StoreTxs(txs *core.TxList) error {
 	return args.Error(0)
 }
 
+func (m *MockTxPool) StorePendingTxs(txs *core.TxList) error {
+	args := m.Called(txs)
+	return args.Error(0)
+}
+
 func (m *MockTxPool) PopTxsFromQueue(max int) []*core.Transaction {
 	args := m.Called(max)
 	return castTransactions(args.Get(0))

@@ -156,11 +156,6 @@ func printAndCheckVars() {
 	fmt.Println("consensus.ExecuteTxFlag =", consensus.ExecuteTxFlag)
 	fmt.Println()
 	pass := true
-	ppov := true
-	if !ppov && !BroadcastTx && len(LoadSubmitNodes) != 1 {
-		fmt.Println("!BroadcastTx ===> len(LoadSubmitNodes)=1")
-		pass = false
-	}
 	if !RunBenchmark && len(LoadSubmitNodes) != 0 {
 		fmt.Println("!RunBenchmark =?=> len(LoadSubmitNodes)=0")
 	}
@@ -169,17 +164,6 @@ func printAndCheckVars() {
 	}
 	if !RunBenchmark && !CheckRotation {
 		fmt.Println("!RunBenchmark ===> CheckRotation")
-		pass = false
-	}
-	if !RunBenchmark && !BroadcastTx {
-		fmt.Println("!RunBenchmark ===> BroadcastTx")
-		pass = false
-	}
-	if !ppov && (!consensus.ExecuteTxFlag && BroadcastTx || !BroadcastTx && consensus.ExecuteTxFlag) {
-		fmt.Println("!consensus.ExecuteTxFlag <=?=> !BroadcastTx")
-	}
-	if !ppov && consensus.ExecuteTxFlag && !BroadcastTx {
-		fmt.Println("consensus.ExecuteTxFlag ===> BroadcastTx")
 		pass = false
 	}
 	if RunBenchmark && !RemoteLinuxCluster {
@@ -193,9 +177,6 @@ func printAndCheckVars() {
 	if !consensus.ExecuteTxFlag && !RunBenchmark {
 		fmt.Println("!consensus.ExecuteTxFlag ===> RunBenchmark")
 		pass = false
-	}
-	if !ppov && !consensus.ExecuteTxFlag && len(BenchLoads) > 1 {
-		fmt.Println("!consensus.ExecuteTxFlag =?=> len(BenchLoads)=1")
 	}
 	if !RunBenchmark && !consensus.ExecuteTxFlag {
 		fmt.Println("!RunBenchmark ===> consensus.ExecuteTxFlag")

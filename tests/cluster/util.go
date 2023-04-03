@@ -115,15 +115,15 @@ func SetupTemplateDir(dir string, keys []*core.PrivateKey, vlds []node.Peer, Wor
 	}
 
 	for i, key := range keys {
-		dir := path.Join(dir, strconv.Itoa(i))
-		os.Mkdir(dir, 0755)
-		if err := WriteNodeKey(dir, key); err != nil {
+		d := path.Join(dir, strconv.Itoa(i))
+		os.Mkdir(d, 0755)
+		if err := WriteNodeKey(d, key); err != nil {
 			return err
 		}
-		if err := WriteGenesisFile(dir, genesis); err != nil {
+		if err := WriteGenesisFile(d, genesis); err != nil {
 			return err
 		}
-		if err := WritePeersFile(dir, vlds); err != nil {
+		if err := WritePeersFile(d, vlds); err != nil {
 			return err
 		}
 	}
@@ -195,10 +195,10 @@ func AddPPoVFlags(cmd *exec.Cmd, config *node.Config) {
 }
 
 func PickUniqueRandoms(total, count int) []int {
-	rand.Seed(time.Now().Unix())
+	r := rand.New(rand.NewSource(time.Now().Unix()))
 	unique := make(map[int]struct{}, count)
 	for len(unique) < count {
-		unique[rand.Intn(total)] = struct{}{}
+		unique[r.Intn(total)] = struct{}{}
 	}
 	ret := make([]int, 0, count)
 	for v := range unique {
