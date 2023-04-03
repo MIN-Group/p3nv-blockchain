@@ -144,7 +144,7 @@ func (vld *validator) onReceiveBatch(batch *core.Batch) error {
 	if err := batch.Header().Validate(vld.resources.VldStore); err != nil {
 		return err
 	}
-	if err := vld.resources.TxPool.StoreTxs(batch.TxList()); err != nil {
+	if err := vld.resources.TxPool.StorePendingTxs(batch.TxList()); err != nil {
 		return err
 	}
 	vld.voterState.addBatch(batch.Header())

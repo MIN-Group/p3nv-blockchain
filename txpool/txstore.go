@@ -85,7 +85,7 @@ func newTxStore() *txStore {
 	}
 }
 
-func (store *txStore) addNewTx(tx *core.Transaction) {
+func (store *txStore) addNewTx(tx *core.Transaction, pending bool) {
 	store.mtx.Lock()
 	defer store.mtx.Unlock()
 
@@ -93,10 +93,11 @@ func (store *txStore) addNewTx(tx *core.Transaction) {
 		return
 	}
 	item := newTxItem(tx)
-	heap.Push(store.txq, item)
+	if !pending {
+		heap.Push(store.txq, item)
+	}
 	store.txItems[string(tx.Hash())] = item
 }
-
 func (store *txStore) popTxsFromQueue(max int) []*core.Transaction {
 	store.mtx.Lock()
 	defer store.mtx.Unlock()

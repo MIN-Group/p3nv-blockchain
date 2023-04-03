@@ -77,7 +77,11 @@ func (pool *TxPool) SyncTxs(peer *core.PublicKey, hashes [][]byte) error {
 }
 
 func (pool *TxPool) StoreTxs(txs *core.TxList) error {
-	return pool.storeTxs(txs)
+	return pool.storeTxs(txs, false)
+}
+
+func (pool *TxPool) StorePendingTxs(txs *core.TxList) error {
+	return pool.storeTxs(txs, true)
 }
 
 func (pool *TxPool) PopTxsFromQueue(max int) []*core.Transaction {
@@ -117,7 +121,7 @@ func (pool *TxPool) GetStatus() Status {
 }
 
 func (pool *TxPool) submitTx(tx *core.Transaction) error {
-	if err := pool.addNewTx(tx); err != nil {
+	if err := pool.addNewTx(tx, false); err != nil {
 		return err
 	}
 	if pool.broadcastTx {
@@ -130,24 +134,24 @@ func (pool *TxPool) subscribeTxs() {
 	sub := pool.msgSvc.SubscribeTxList(100)
 	for e := range sub.Events() {
 		txList := e.(*core.TxList)
-		if err := pool.addTxList(txList); err != nil {
+		if err := pool.addTxList(txList, false); err != nil {
 			logger.I().Warnf("add tx list failed %+v", err)
 		}
 	}
 }
 
-func (pool *TxPool) addTxList(txList *core.TxList) error {
+func (pool *TxPool) addTxList(txList *core.TxList, pending bool) error {
 	jobCh := make(chan *core.Transaction, len(*txList))
 	defer close(jobCh)
 	out := make(chan error, len(*txList))
 	defer close(out)
 
 	for i := 0; i < 50; i++ {
-		go func(jobCh <-chan *core.Transaction, out chan<- error) {
+		go func(jobCh <-chan *core.Transaction, out chan<- error, pending bool) {
 			for tx := range jobCh {
-				out <- pool.addNewTx(tx)
+				out <- pool.addNewTx(tx, pending)
 			}
-		}(jobCh, out)
+		}(jobCh, out, pending)
 	}
 	for _, tx := range *txList {
 		jobCh <- tx
@@ -161,7 +165,7 @@ func (pool *TxPool) addTxList(txList *core.TxList) error {
 	return nil
 }
 
-func (pool *TxPool) addNewTx(tx *core.Transaction) error {
+func (pool *TxPool) addNewTx(tx *core.Transaction, pending bool) error {
 	if err := tx.Validate(); err != nil {
 		return err
 	}
@@ -171,7 +175,7 @@ func (pool *TxPool) addNewTx(tx *core.Transaction) error {
 	if err := pool.execution.VerifyTx(tx); err != nil {
 		return err
 	}
-	pool.store.addNewTx(tx)
+	pool.store.addNewTx(tx, pending)
 	return nil
 }
 
@@ -189,7 +193,7 @@ func (pool *TxPool) syncTxs(peer *core.PublicKey, hashes [][]byte) error {
 	if err != nil {
 		return err
 	}
-	return pool.addTxList(txList)
+	return pool.addTxList(txList, false) //TODO 同步的交易可能是Pending状态
 }
 
 func (pool *TxPool) requestTxList(peer *core.PublicKey, hashes [][]byte) (*core.TxList, error) {
@@ -205,22 +209,24 @@ func (pool *TxPool) requestTxList(peer *core.PublicKey, hashes [][]byte) (*core.
 	return txList, nil
 }
 
-func (pool *TxPool) storeTxs(txs *core.TxList) error {
+func (pool *TxPool) storeTxs(txs *core.TxList, pending bool) error {
 	missing := make([]*core.Transaction, 0)
 	for _, tx := range *txs {
 		if !pool.storage.HasTx(tx.Hash()) && pool.store.getTx(tx.Hash()) == nil {
 			missing = append(missing, tx)
-			if pool.broadcastTx {
+			if !pending && pool.broadcastTx {
 				pool.broadcaster.queue <- tx
 			}
 		}
 	}
-	logger.I().Debugw("store txs into txpool", "txs", len(missing), "queue", pool.store.txq.Len())
 	if len(missing) == 0 {
 		return nil
 	}
+	if !pending {
+		logger.I().Debugw("store txs into txpool", "txs", len(missing), "queue", pool.store.txq.Len())
+	}
 	txList := core.TxList(missing)
-	return pool.addTxList(&txList)
+	return pool.addTxList(&txList, pending)
 }
 
 func (pool *TxPool) getTxsToExecute(hashes [][]byte) ([]*core.Transaction, [][]byte) {
