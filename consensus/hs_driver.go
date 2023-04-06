@@ -95,7 +95,7 @@ func (hsd *hsDriver) BroadcastProposal(hsBlk hotstuff.Block) {
 func (hsd *hsDriver) VoteBlock(hsBlk hotstuff.Block) {
 	blk := hsBlk.(*hsBlock).block
 	vote := blk.Vote(hsd.resources.Signer)
-	if ExecuteTxFlag {
+	if !PreserveTxFlag {
 		hsd.resources.TxPool.SetTxsPending(blk.Transactions())
 	}
 	hsd.delayVoteWhenNoTxs()
@@ -171,7 +171,7 @@ func (hsd *hsDriver) Commit(hsBlk hotstuff.Block) {
 func (hsd *hsDriver) cleanStateOnCommitted(bexec *core.Block) {
 	// qc for bexec is no longer needed here after committed to storage
 	hsd.state.deleteQC(bexec.Hash())
-	if ExecuteTxFlag {
+	if !PreserveTxFlag {
 		hsd.resources.TxPool.RemoveTxs(bexec.Transactions())
 	}
 	hsd.state.setCommittedBlock(bexec)

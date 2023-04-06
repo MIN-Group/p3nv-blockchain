@@ -154,6 +154,7 @@ func (l *leaderState) waitCleanState(hash string, timer *time.Timer, stopCh chan
 		delete(l.batchSigns, hash)
 		delete(l.batchStopCh, hash)
 		l.mtxState.Unlock()
+		logger.I().Debug("deleted batch which is not ready")
 	case <-stopCh:
 	}
 	timer.Stop()

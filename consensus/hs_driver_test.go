@@ -45,9 +45,6 @@ func TestHsDriver_TestMajorityCount(t *testing.T) {
 }
 
 func TestHsDriver_CreateLeaf(t *testing.T) {
-	if !ExecuteTxFlag {
-		t.Skip("skipping execution of TestHsDriver_CreateLeaf because ExecuteTxFlag is set to false")
-	}
 	hsd := setupTestHsDriver()
 	parent := newHsBlock(core.NewBlock().Sign(hsd.resources.Signer), hsd.state)
 	hsd.state.setBlock(parent.(*hsBlock).block)
@@ -64,8 +61,10 @@ func TestHsDriver_CreateLeaf(t *testing.T) {
 
 	tx1, tx2 := []byte("tx1"), []byte("tx2")
 	txsInQ := [][]byte{tx1, tx2}
-	storage.On("HasTx", tx1).Return(false)
-	storage.On("HasTx", tx2).Return(false)
+	if ExecuteTxFlag {
+		storage.On("HasTx", tx1).Return(false)
+		storage.On("HasTx", tx2).Return(false)
+	}
 
 	hsd.leaderState = newLeaderState().setBatchWaitTime(3 * time.Second).setBatchSignLimit(1).setBlockBatchLimit(1)
 	batch := core.NewBatch().Header().SetTransactions(txsInQ).Sign(signer)
@@ -73,7 +72,9 @@ func TestHsDriver_CreateLeaf(t *testing.T) {
 	hsd.leaderState.addBatchVote(batchVote)
 
 	txpool := new(MockTxPool)
-	txpool.On("SyncTxs", batch.Proposer(), batch.Transactions()).Return(nil)
+	if ExecuteTxFlag {
+		txpool.On("SyncTxs", batch.Proposer(), batch.Transactions()).Return(nil)
+	}
 	hsd.resources.TxPool = txpool
 
 	leaf := hsd.CreateLeaf(parent, qc, height)
@@ -108,7 +109,7 @@ func TestHsDriver_VoteBlock(t *testing.T) {
 
 	txPool := new(MockTxPool)
 	txPool.On("GetStatus").Return(txpool.Status{}) // no txs in the pool
-	if ExecuteTxFlag {
+	if !PreserveTxFlag {
 		txPool.On("SetTxsPending", blk.Transactions())
 	}
 	hsd.resources.TxPool = txPool
@@ -130,7 +131,7 @@ func TestHsDriver_VoteBlock(t *testing.T) {
 
 	txPool = new(MockTxPool)
 	txPool.On("GetStatus").Return(txpool.Status{Total: 1}) // one txs in the pool
-	if ExecuteTxFlag {
+	if !PreserveTxFlag {
 		txPool.On("SetTxsPending", blk.Transactions())
 	}
 	hsd.resources.TxPool = txPool
@@ -146,9 +147,6 @@ func TestHsDriver_VoteBlock(t *testing.T) {
 }
 
 func TestHsDriver_Commit(t *testing.T) {
-	if !ExecuteTxFlag {
-		t.Skip("skipping execution of TestHsDriver_Commit because ExecuteTxFlag is set to false")
-	}
 	hsd := setupTestHsDriver()
 	parent := core.NewBlock().SetHeight(10).Sign(hsd.resources.Signer)
 	batch := core.NewBatch().Header().SetTransactions([][]byte{[]byte("txfromfolk")}).Sign(hsd.resources.Signer)
@@ -164,25 +162,33 @@ func TestHsDriver_Commit(t *testing.T) {
 
 	txs := []*core.Transaction{tx}
 	txPool := new(MockTxPool)
-	txPool.On("GetTxsToExecute", bexec.Transactions()).Return(txs, nil)
-	// should remove txs from pool after commit
-	txPool.On("RemoveTxs", bexec.Transactions()).Once()
-	// should put txs of folked block back to queue from pending
-	txPool.On("PutTxsToQueue", bfolk.Transactions()).Once()
+	if ExecuteTxFlag {
+		txPool.On("GetTxsToExecute", bexec.Transactions()).Return(txs, nil)
+	}
+	if !PreserveTxFlag {
+		txPool.On("RemoveTxs", bexec.Transactions()).Once() // should remove txs from pool after commit
+	}
+	txPool.On("PutTxsToQueue", bfolk.Transactions()).Once() // should put txs of folked block back to queue from pending
 	hsd.resources.TxPool = txPool
 
 	bcm := core.NewBlockCommit().SetHash(bexec.Hash())
 	txcs := []*core.TxCommit{core.NewTxCommit().SetHash(tx.Hash())}
-	execution := new(MockExecution)
-	execution.On("Execute", bexec, txs).Return(bcm, txcs)
-	hsd.resources.Execution = execution
-
 	cdata := &storage.CommitData{
 		Block:        bexec,
 		Transactions: txs,
 		BlockCommit:  bcm,
 		TxCommits:    txcs,
 	}
+
+	execution := new(MockExecution)
+	if ExecuteTxFlag {
+		execution.On("Execute", bexec, txs).Return(bcm, txcs)
+	} else {
+		cdata.Transactions = nil
+		execution.On("MockExecute", bexec).Return(bcm, txcs)
+	}
+	hsd.resources.Execution = execution
+
 	storage := new(MockStorage)
 	storage.On("Commit", cdata).Return(nil)
 	hsd.resources.Storage = storage

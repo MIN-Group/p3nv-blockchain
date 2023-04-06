@@ -102,12 +102,6 @@ func (ftry *RemoteFactory) GetParams() RemoteFactoryParams {
 }
 
 func (ftry *RemoteFactory) setup() error {
-	if err := ftry.setupRemoteServers(); err != nil {
-		return err
-	}
-	if err := ftry.sendPPoV(); err != nil {
-		return err
-	}
 	addrs, err := ftry.makeAddrs()
 	if err != nil {
 		return err
@@ -115,6 +109,13 @@ func (ftry *RemoteFactory) setup() error {
 	keys := MakeRandomKeys(ftry.params.NodeCount)
 	peers := MakePeers(keys, addrs)
 	if err := SetupTemplateDir(ftry.templateDir, keys, peers, ftry.params.WorkerProportion, ftry.params.VoterProportion); err != nil {
+		return err
+	}
+	fmt.Println()
+	if err := ftry.setupRemoteServers(); err != nil {
+		return err
+	}
+	if err := ftry.sendPPoV(); err != nil {
 		return err
 	}
 	return ftry.sendTemplate()

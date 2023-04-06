@@ -13,9 +13,6 @@ import (
 )
 
 func TestValidator_verifyProposalToVote(t *testing.T) {
-	if !ExecuteTxFlag {
-		t.Skip("skipping execution of TestValidator_verifyProposalToVote because ExecuteTxFlag is set to false")
-	}
 	priv0 := core.GenerateKey(nil)
 	priv1 := core.GenerateKey(nil)
 	keys := []string{
@@ -70,12 +67,12 @@ func TestValidator_verifyProposalToVote(t *testing.T) {
 	}
 	vld.state.committedHeight = mStrg.GetBlockHeight()
 	vld.state.setLeaderIndex(1)
-
-	tests := []struct {
+	type testCase struct {
 		name     string
 		valid    bool
 		proposal *core.Block
-	}{
+	}
+	tests := []testCase{
 		{"valid", true, core.NewBlock().
 			SetHeight(14).SetExecHeight(10).SetMerkleRoot(mRoot).
 			SetBatchHeaders([]*core.BatchHeader{header1}, true).
@@ -91,26 +88,30 @@ func TestValidator_verifyProposalToVote(t *testing.T) {
 			SetBatchHeaders([]*core.BatchHeader{header1}, true).
 			Sign(priv1),
 		},
-		{"different merkle root", false, core.NewBlock().
-			SetHeight(14).SetExecHeight(10).SetMerkleRoot([]byte("different")).
-			SetBatchHeaders([]*core.BatchHeader{header1}, true).
-			Sign(priv1),
-		},
-		{"committed tx", false, core.NewBlock().
-			SetHeight(14).SetExecHeight(10).SetMerkleRoot(mRoot).
-			SetBatchHeaders([]*core.BatchHeader{header2}, true).
-			Sign(priv1),
-		},
-		{"expired tx", false, core.NewBlock().
-			SetHeight(14).SetExecHeight(10).SetMerkleRoot(mRoot).
-			SetBatchHeaders([]*core.BatchHeader{header3}, true).
-			Sign(priv1),
-		},
-		{"not found tx", false, core.NewBlock().
-			SetHeight(14).SetExecHeight(10).SetMerkleRoot(mRoot).
-			SetBatchHeaders([]*core.BatchHeader{header4}, true).
-			Sign(priv1),
-		},
+	}
+	if ExecuteTxFlag {
+		tests = append(tests, []testCase{
+			{"different merkle root", false, core.NewBlock().
+				SetHeight(14).SetExecHeight(10).SetMerkleRoot([]byte("different")).
+				SetBatchHeaders([]*core.BatchHeader{header1}, true).
+				Sign(priv1),
+			},
+			{"committed tx", false, core.NewBlock().
+				SetHeight(14).SetExecHeight(10).SetMerkleRoot(mRoot).
+				SetBatchHeaders([]*core.BatchHeader{header2}, true).
+				Sign(priv1),
+			},
+			{"expired tx", false, core.NewBlock().
+				SetHeight(14).SetExecHeight(10).SetMerkleRoot(mRoot).
+				SetBatchHeaders([]*core.BatchHeader{header3}, true).
+				Sign(priv1),
+			},
+			{"not found tx", false, core.NewBlock().
+				SetHeight(14).SetExecHeight(10).SetMerkleRoot(mRoot).
+				SetBatchHeaders([]*core.BatchHeader{header4}, true).
+				Sign(priv1),
+			},
+		}...)
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

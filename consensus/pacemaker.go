@@ -143,10 +143,10 @@ func (pm *pacemaker) newBatch() {
 	}
 
 	var txs []*core.Transaction
-	if ExecuteTxFlag {
-		txs = pm.resources.TxPool.PopTxsFromQueue(pm.config.BatchTxLimit)
-	} else {
+	if PreserveTxFlag {
 		txs = pm.resources.TxPool.GetTxsFromQueue(pm.config.BatchTxLimit)
+	} else {
+		txs = pm.resources.TxPool.PopTxsFromQueue(pm.config.BatchTxLimit)
 	}
 	if len(txs) == 0 {
 		return
