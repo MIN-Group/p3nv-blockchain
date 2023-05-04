@@ -147,7 +147,7 @@ func (vld *validator) onReceiveBatch(batch *core.Batch) error {
 	if err := vld.resources.TxPool.StorePendingTxs(batch.TxList()); err != nil {
 		return err
 	}
-	vld.voterState.addBatch(batch.Header())
+	vld.voterState.addBatch(batch.Header()) //TODO 存在非投票节点Batch队列溢出的问题
 	widx := vld.resources.VldStore.GetWorkerIndex(batch.Header().Proposer())
 	logger.I().Debugw("received batch", "worker", widx, "txs", len(batch.Header().Transactions()))
 	if vld.state.isThisNodeVoter() && vld.voterState.hasEnoughBatch() {
