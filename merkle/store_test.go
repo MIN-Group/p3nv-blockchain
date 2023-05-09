@@ -24,11 +24,11 @@ func TestMapStore(t *testing.T) {
 		LeafCount: big.NewInt(2),
 		Height:    2,
 		Leaves: []*Node{
-			{NewPosition(0, big.NewInt(0)), []byte{1, 1}},
-			{NewPosition(0, big.NewInt(1)), []byte{2, 2}},
+			{NewPosition(0, big.NewInt(0)), []byte{1}},
+			{NewPosition(0, big.NewInt(1)), []byte{2}},
 		},
 		Branches: []*Node{
-			{NewPosition(1, big.NewInt(0)), []byte{3, 3}},
+			{NewPosition(1, big.NewInt(0)), []byte{3}},
 		},
 	}
 
@@ -36,7 +36,7 @@ func TestMapStore(t *testing.T) {
 
 	assert.Equal(upd.Height, ms.GetHeight())
 	assert.Equal(upd.LeafCount, ms.GetLeafCount())
-	assert.Equal([]byte{1, 1}, ms.GetNode(NewPosition(0, big.NewInt(0))))
-	assert.Equal([]byte{2, 2}, ms.GetNode(NewPosition(0, big.NewInt(1))))
-	assert.Equal([]byte{3, 3}, ms.GetNode(NewPosition(1, big.NewInt(0))))
+	assert.Equal([]byte{1}, ms.GetNode(NewPosition(0, big.NewInt(0))))
+	assert.Equal([]byte{2}, ms.GetNode(NewPosition(0, big.NewInt(1))))
+	assert.Equal([]byte{3}, ms.GetNode(NewPosition(1, big.NewInt(0))))
 }

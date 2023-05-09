@@ -11,10 +11,9 @@ import (
 
 // Position of a node in the tree
 type Position struct {
-	level uint8
-	index *big.Int
+	level uint8    //节点在树中的层次，父节点的层次大1
+	index *big.Int //节点在层中的索引
 	bytes []byte
-	str   string
 }
 
 // UnmarshalPosition unmarshals position from raw bytes
@@ -23,7 +22,6 @@ func UnmarshalPosition(b []byte) *Position {
 	p.bytes = b
 	p.level = b[0]
 	p.index = big.NewInt(0).SetBytes(b[1:])
-	p.setString()
 	return p
 }
 
@@ -33,7 +31,6 @@ func NewPosition(level uint8, index *big.Int) *Position {
 	p.level = level
 	p.index = index
 	p.setBytes()
-	p.setString()
 	return p
 }
 
@@ -45,10 +42,6 @@ func (p *Position) setBytes() {
 	p.bytes = make([]byte, 0, 1+len(ib))
 	p.bytes = append(p.bytes, p.level)
 	p.bytes = append(p.bytes, ib...)
-}
-
-func (p *Position) setString() {
-	p.str = string(p.bytes)
 }
 
 // Level gives the level of position
@@ -68,21 +61,7 @@ func (p *Position) Bytes() []byte {
 }
 
 func (p *Position) String() string {
-	return p.str
-}
-
-// Positions slice
-type Positions []*Position
-
-// UniqueMap merges the same positions
-func (ps Positions) UniqueMap() map[string]*Position {
-	pmap := make(map[string]*Position)
-	for _, p := range ps {
-		if _, found := pmap[p.String()]; !found {
-			pmap[p.String()] = p
-		}
-	}
-	return pmap
+	return string(p.bytes)
 }
 
 // Node type
@@ -113,7 +92,7 @@ func NewGroup(h crypto.Hash, tc *TreeCalc, store Store, pPos *Position) *Group {
 
 // SetNode sets the node at the corresponding index in the block
 func (b *Group) SetNode(n *Node) *Group {
-	i := b.tc.NodeIndexInGroup(n.Position.Index())
+	i := b.tc.NodeIndexInGroup(n.Position.Index()) //获取节点在group中的索引
 	if i < len(b.nodes) {
 		b.nodes[i] = n
 	}
@@ -122,7 +101,7 @@ func (b *Group) SetNode(n *Node) *Group {
 
 // Load loads the child nodes from the store
 func (b *Group) Load(rowSize *big.Int) *Group {
-	offset := b.tc.FirstNodeOfGroup(b.parentPosition.Index())
+	offset := b.tc.FirstNodeOfGroup(b.parentPosition.Index()) //根据父节点索引获取group的第一个节点的索引
 	for i, n := range b.nodes {
 		if n != nil {
 			continue
