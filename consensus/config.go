@@ -48,8 +48,8 @@ type Config struct {
 
 var DefaultConfig = Config{
 	BatchTxLimit:    5000,
-	BlockBatchLimit: 4,
-	VoteBatchLimit:  4,
+	BlockBatchLimit: -1, // set to -1 to adapt to the number of worker nodes
+	VoteBatchLimit:  -1, // set to -1 to adapt to the number of worker nodes
 	TxWaitTime:      1 * time.Second,
 	BatchWaitTime:   3 * time.Second,
 	ProposeTimeout:  1500 * time.Millisecond,

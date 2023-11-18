@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"runtime"
 	"syscall"
 
 	"github.com/multiformats/go-multiaddr"
@@ -47,6 +48,7 @@ func Run(config Config) {
 	node.setupBinccDir()
 	node.setupLogger()
 	node.readFiles()
+	node.limitCPUs()
 	node.setupComponents()
 	logger.I().Infow("node setup done")
 	node.consensus.Start()
@@ -56,6 +58,14 @@ func Run(config Config) {
 	<-c
 	logger.I().Info("node killed")
 	node.consensus.Stop()
+}
+
+func (node *Node) limitCPUs() {
+	if consensus.PreserveTxFlag {
+		runtime.GOMAXPROCS(MaxProcsNum)
+		logger.I().Debugf("setup node to use %d out of %d CPUs",
+			runtime.GOMAXPROCS(0), runtime.NumCPU())
+	}
 }
 
 func (node *Node) setupLogger() {

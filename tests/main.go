@@ -39,7 +39,7 @@ var (
 	BroadcastTx    = false
 
 	// run tests in remote linux cluster
-	RemoteLinuxCluster    = false // if false it'll use local cluster (running multiple nodes on single local machine)
+	RemoteLinuxCluster    = true // if false it'll use local cluster (running multiple nodes on single local machine)
 	RemoteSetupRequired   = true
 	RemoteInstallRequired = false // if false it will not try to install dstat on remote machine
 	RemoteKeySSH          = "~/.ssh/id_rsa"
@@ -50,7 +50,7 @@ var (
 	BenchDuration = 5 * time.Minute
 	BenchLoads    = []int{20000, 40000, 60000}
 
-	SetupClusterTemplate = true
+	SetupClusterTemplate = false
 )
 
 func getNodeConfig() node.Config {
