@@ -10,11 +10,11 @@ import (
 	"github.com/wooyang2018/ppov-blockchain/storage"
 )
 
-const MaxProcsNum = 8 //set corresponding num of CPUs when benchmark test
+const MaxProcsNum = 8 // set corresponding num of CPUs when benchmark test
 
 type Config struct {
 	Debug       bool
-	Datadir     string
+	DataDir     string
 	Port        int
 	APIPort     int
 	BroadcastTx bool

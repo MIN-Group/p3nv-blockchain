@@ -83,24 +83,24 @@ func (node *Node) setupLogger() {
 }
 
 func (node *Node) setupBinccDir() {
-	node.config.ExecutionConfig.BinccDir = path.Join(node.config.Datadir, "bincc")
+	node.config.ExecutionConfig.BinccDir = path.Join(node.config.DataDir, "bincc")
 	os.Mkdir(node.config.ExecutionConfig.BinccDir, 0755)
 }
 
 func (node *Node) readFiles() {
 	var err error
-	node.privKey, err = readNodeKey(node.config.Datadir)
+	node.privKey, err = readNodeKey(node.config.DataDir)
 	if err != nil {
 		logger.I().Fatalw("read key failed", "error", err)
 	}
 	logger.I().Infow("read nodekey", "pubkey", node.privKey.PublicKey())
 
-	node.genesis, err = readGenesis(node.config.Datadir)
+	node.genesis, err = readGenesis(node.config.DataDir)
 	if err != nil {
 		logger.I().Fatalw("read genesis failed", "error", err)
 	}
 
-	node.peers, err = readPeers(node.config.Datadir)
+	node.peers, err = readPeers(node.config.DataDir)
 	if err != nil {
 		logger.I().Fatalw("read peers failed", "error", err)
 	}
@@ -125,7 +125,7 @@ func (node *Node) setupValidatorStore() {
 }
 
 func (node *Node) setupStorage() {
-	db, err := storage.NewLevelDB(path.Join(node.config.Datadir, "db"))
+	db, err := storage.NewLevelDB(path.Join(node.config.DataDir, "db"))
 	if err != nil {
 		logger.I().Fatalw("setup storage failed", "error", err)
 	}

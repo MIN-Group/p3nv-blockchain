@@ -113,13 +113,13 @@ func (bm *Benchmark) runWithLoad(tps int) error {
 		fmt.Println("Stopped cluster")
 
 		bm.saveResults()
-		bm.stopDstat()
-		bm.downloadDstat()
-		fmt.Println("Downloaded dstat records")
-
+		if RemoteRunRequired {
+			bm.stopDstat()
+			fmt.Println("Downloaded dstat records")
+		}
+		bm.downloadFiles()
 		bm.removeDB()
-		fmt.Println("Removed DB, Done", bm.benchmarkName)
-		fmt.Print("\n\n")
+		fmt.Println("Removed DB, Done\n")
 	}
 	return bm.err
 }
@@ -135,7 +135,9 @@ func (bm *Benchmark) runAsync(loadCtx context.Context, done chan struct{}) {
 	bm.cluster.EmptyChainCode = EmptyChainCode
 	bm.cluster.CheckRotation = CheckRotation
 
-	bm.startDstat()
+	if RemoteRunRequired {
+		bm.startDstat()
+	}
 
 	fmt.Println("Starting cluster")
 	bm.err = bm.cluster.Start()
@@ -196,16 +198,35 @@ func (bm *Benchmark) stopDstat() {
 	wg.Wait()
 }
 
-func (bm *Benchmark) downloadDstat() {
+func (bm *Benchmark) downloadFiles() {
 	var wg sync.WaitGroup
 	for i := 0; i < bm.cluster.NodeCount(); i++ {
+		if i >= 4 && i < bm.cluster.NodeCount()-1 {
+			continue
+		}
 		node := bm.cluster.GetNode(i).(*cluster.RemoteNode)
-		filePath := path.Join(bm.resultDir, fmt.Sprintf("dstat_%d.txt", i))
-		wg.Add(1)
+		wg.Add(2)
+
+		filePath1 := path.Join(bm.resultDir, fmt.Sprintf("consensus_%d.csv", i))
 		go func() {
 			defer wg.Done()
-			node.DownloadDstat(filePath)
+			node.DownloadFile(filePath1, "consensus.csv")
 		}()
+
+		filePath2 := path.Join(bm.resultDir, fmt.Sprintf("log_%d.txt", i))
+		go func() {
+			defer wg.Done()
+			node.DownloadFile(filePath2, "log.txt")
+		}()
+
+		if RemoteRunRequired {
+			wg.Add(1)
+			filePath3 := path.Join(bm.resultDir, fmt.Sprintf("dstat_%d.txt", i))
+			go func() {
+				defer wg.Done()
+				node.DownloadFile(filePath3, "dstat.txt")
+			}()
+		}
 	}
 	wg.Wait()
 }

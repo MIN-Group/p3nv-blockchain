@@ -27,8 +27,8 @@ var (
 	WorkerProportion float32 = 1
 	VoterProportion  float32 = 1
 
-	LoadTxPerSec    = 100
-	LoadJobPerTick  = 5000
+	LoadTxPerSec    = 10
+	LoadJobPerTick  = 500
 	LoadSubmitNodes = []int{}
 	LoadBatchSubmit = true //whether to enable batch transaction submission
 
@@ -39,16 +39,17 @@ var (
 	BroadcastTx    = false
 
 	// run tests in remote linux cluster
-	RemoteLinuxCluster    = true // if false it'll use local cluster (running multiple nodes on single local machine)
+	RemoteLinuxCluster    = false // if false it'll use local cluster (running multiple nodes on single local machine)
 	RemoteSetupRequired   = true
 	RemoteInstallRequired = false // if false it will not try to install dstat on remote machine
+	RemoteRunRequired     = false // if false it will not run dstat on remote machine
 	RemoteKeySSH          = "~/.ssh/id_rsa"
 	RemoteHostsPath       = "hosts"
 
 	// run benchmark, otherwise run experiments
 	RunBenchmark  = false
-	BenchDuration = 5 * time.Minute
-	BenchLoads    = []int{20000, 40000, 60000}
+	BenchDuration = 1 * time.Minute
+	BenchLoads    = []int{20000}
 
 	SetupClusterTemplate = false
 )
