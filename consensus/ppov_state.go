@@ -101,6 +101,12 @@ func (l *leaderState) setBatchWaitTime(batchWaitTime time.Duration) *leaderState
 	return l
 }
 
+func (l *leaderState) getBatchReadyNum() int {
+	l.mtxState.Lock()
+	defer l.mtxState.Unlock()
+	return len(l.batchReadyQ)
+}
+
 func (l *leaderState) addBatchVote(vote *core.BatchVote) {
 	l.mtxState.Lock()
 	defer l.mtxState.Unlock()

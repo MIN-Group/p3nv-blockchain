@@ -15,11 +15,11 @@ import (
 type pacemaker struct {
 	resources *Resources
 	config    Config
+	hotstuff  *hotstuff.Hotstuff
 
-	state      *state
-	voterState *voterState
-
-	hotstuff *hotstuff.Hotstuff
+	state       *state
+	voterState  *voterState
+	leaderState *leaderState
 
 	stopCh chan struct{}
 }
@@ -72,7 +72,7 @@ func (pm *pacemaker) run() {
 	defer subQC.Unsubscribe()
 
 	for {
-		blkDelay := time.After(pm.config.BlockDelay)
+		blkDelayT := pm.nextBlockDelay()
 		pm.newBlock()
 		beatT := pm.nextProposeTimeout()
 
@@ -89,9 +89,19 @@ func (pm *pacemaker) run() {
 		select {
 		case <-pm.stopCh:
 			return
-		case <-blkDelay:
+		case <-blkDelayT.C:
 		}
+		blkDelayT.Stop()
 	}
+}
+
+func (pm *pacemaker) nextBlockDelay() *time.Timer {
+	delay := pm.config.BlockDelay
+	if pm.leaderState.getBatchReadyNum() < pm.config.BlockBatchLimit {
+		delay += time.Duration(pm.config.BlockBatchLimit-
+			pm.leaderState.getBatchReadyNum()) * (pm.config.TxWaitTime / 2)
+	}
+	return time.NewTimer(delay)
 }
 
 func (pm *pacemaker) nextProposeTimeout() *time.Timer {
@@ -122,7 +132,8 @@ func (pm *pacemaker) newBlock() {
 	}
 
 	blk := pm.hotstuff.OnPropose()
-	logger.I().Debugw("proposed block", "height", blk.Height(), "qc", qcRefHeight(blk.Justify()), "txs", len(blk.Transactions()))
+	logger.I().Debugw("proposed block", "height", blk.Height(),
+		"qc", qcRefHeight(blk.Justify()), "txs", len(blk.Transactions()))
 	vote := blk.(*hsBlock).block.ProposerVote()
 	pm.hotstuff.OnReceiveVote(newHsVote(vote, pm.state))
 	pm.hotstuff.Update(blk)
@@ -148,7 +159,7 @@ func (pm *pacemaker) newBatch() {
 	} else {
 		txs = pm.resources.TxPool.PopTxsFromQueue(pm.config.BatchTxLimit)
 	}
-	if len(txs) == 0 {
+	if len(txs) == 0 { //忽略打包空Batch
 		return
 	}
 
@@ -157,5 +168,6 @@ func (pm *pacemaker) newBatch() {
 	pm.voterState.addBatch(batch.Header())
 	pm.resources.MsgSvc.BroadcastBatch(batch)
 	widx := pm.resources.VldStore.GetWorkerIndex(signer.PublicKey())
-	logger.I().Debugw("generated batch", "worker", widx, "txs", len(batch.Header().Transactions()))
+	logger.I().Debugw("generated batch", "worker", widx,
+		"txs", len(batch.Header().Transactions()))
 }

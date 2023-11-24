@@ -157,19 +157,20 @@ func (cons *Consensus) setupValidator() {
 	cons.validator = &validator{
 		resources:   cons.resources,
 		state:       cons.state,
+		hotstuff:    cons.hotstuff,
 		leaderState: cons.leaderState,
 		voterState:  cons.voterState,
-		hotstuff:    cons.hotstuff,
 	}
 }
 
 func (cons *Consensus) setupPacemaker() {
 	cons.pacemaker = &pacemaker{
-		resources:  cons.resources,
-		config:     cons.config,
-		state:      cons.state,
-		voterState: cons.voterState,
-		hotstuff:   cons.hotstuff,
+		resources:   cons.resources,
+		config:      cons.config,
+		hotstuff:    cons.hotstuff,
+		state:       cons.state,
+		voterState:  cons.voterState,
+		leaderState: cons.leaderState,
 	}
 }
 

@@ -31,8 +31,7 @@ type rotator struct {
 	mtxPVC            sync.RWMutex
 
 	leaderTimeoutCount int
-
-	stopCh chan struct{}
+	stopCh             chan struct{}
 }
 
 func (rot *rotator) start() {

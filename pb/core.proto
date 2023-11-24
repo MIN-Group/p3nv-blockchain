@@ -17,7 +17,7 @@ message Block {
   int64 timestamp = 8;
   bytes signature = 9; // signature of proposer
   repeated BatchHeader batchHeaders = 10;
-  repeated bytes transactions = 11; // transaction hashes
+  repeated bytes transactions = 11; // TODO remove transaction hashes
 }
 
 message Batch{

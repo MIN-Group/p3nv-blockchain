@@ -24,8 +24,7 @@ type validator struct {
 	leaderState *leaderState
 
 	mtxProposal sync.Mutex
-
-	stopCh chan struct{}
+	stopCh      chan struct{}
 }
 
 func (vld *validator) start() {
@@ -150,6 +149,7 @@ func (vld *validator) onReceiveBatch(batch *core.Batch) error {
 	vld.voterState.addBatch(batch.Header()) //TODO 存在非投票节点Batch队列溢出的问题
 	widx := vld.resources.VldStore.GetWorkerIndex(batch.Header().Proposer())
 	logger.I().Debugw("received batch", "worker", widx, "txs", len(batch.Header().Transactions()))
+	//如果当前节点是Voter且收到了足够的Batch，则对Batch批量投票
 	if vld.state.isThisNodeVoter() && vld.voterState.hasEnoughBatch() {
 		signer := vld.resources.Signer
 		vote := core.NewBatchVote().Build(vld.voterState.popBatch(), signer)

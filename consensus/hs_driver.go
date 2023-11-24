@@ -52,26 +52,33 @@ func (hsd *hsDriver) CreateLeaf(parent hotstuff.Block, qc hotstuff.QC, height ui
 }
 
 func (hsd *hsDriver) extractBatchTxs(headers []*core.BatchHeader) [][]byte {
-	if ExecuteTxFlag {
+	if !ExecuteTxFlag {
+		txList := make([][]byte, 0)
 		for _, batch := range headers {
-			if err := hsd.resources.TxPool.SyncTxs(batch.Proposer(), batch.Transactions()); err != nil {
-				logger.I().Errorw("sync txs failed", "error", err)
-			}
+			txList = append(txList, batch.Transactions()...)
+		}
+		return txList
+	}
+
+	for _, batch := range headers {
+		if err := hsd.resources.TxPool.SyncTxs(batch.Proposer(), batch.Transactions()); err != nil {
+			logger.I().Errorw("sync txs failed", "error", err)
 		}
 	}
+
 	txSet := make(map[string]struct{})
 	txs := make([][]byte, 0)
 	for _, batch := range headers {
 		for _, hash := range batch.Transactions() {
-			if ExecuteTxFlag {
-				if _, ok := txSet[string(hash)]; ok {
-					continue //重复交易则跳过
-				}
-				if hsd.resources.Storage.HasTx(hash) {
-					continue //已提交交易则跳过
-				}
-				txSet[string(hash)] = struct{}{} //集合去重
+
+			if _, ok := txSet[string(hash)]; ok {
+				continue //重复交易则跳过
 			}
+			if hsd.resources.Storage.HasTx(hash) {
+				continue //已提交交易则跳过
+			}
+			txSet[string(hash)] = struct{}{} //集合去重
+
 			txs = append(txs, hash)
 		}
 	}

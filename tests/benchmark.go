@@ -285,6 +285,11 @@ func (bm *Benchmark) onTick() error {
 	go func() {
 		defer wg.Done()
 		meas.TxPoolStatus = testutil.GetTxPoolStatusAll(bm.cluster)
+		if meas.TxPoolStatus[0].Queue >= 30000 {
+			bm.loadGen.Pause()
+		} else if meas.TxPoolStatus[0].Queue <= 10000 {
+			bm.loadGen.UnPause()
+		}
 	}()
 	if consensus.ExecuteTxFlag {
 		wg.Add(1)
@@ -335,8 +340,10 @@ func (bm *Benchmark) saveResults() error {
 		return err
 	}
 	for i := 0; i < bm.cluster.NodeCount(); i++ {
-		if err := bm.saveStatusOneNode(i); err != nil {
-			return err
+		if i < 4 || i == bm.cluster.NodeCount()-1 {
+			if err := bm.saveStatusOneNode(i); err != nil {
+				return err
+			}
 		}
 	}
 	fmt.Printf("\nSaved Results in %s\n", bm.resultDir)

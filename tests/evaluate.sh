@@ -15,6 +15,7 @@ function set_node_count() {
 ########## Experiment 1: Basic Performance ##########
 #ExecuteTxFlag = false
 #PreserveTxFlag = true
+#VoteBatchFlag = false
 #BatchTxLimit = 5000
 #BlockBatchLimit: -1
 #VoteBatchLimit:  -1
