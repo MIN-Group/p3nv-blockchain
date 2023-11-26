@@ -131,13 +131,6 @@ func (store *txStore) getTxsFromQueue(max int) []*core.Transaction {
 	return ret
 }
 
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}
-
 func (store *txStore) putTxsToQueue(hashes [][]byte) {
 	store.mtx.Lock()
 	defer store.mtx.Unlock()

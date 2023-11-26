@@ -141,7 +141,7 @@ func (cons *Consensus) setupHotstuff(b0 *core.Block, q0 *core.QuorumCert) {
 func (cons *Consensus) setupPPovState() {
 	cons.voterState = newVoterState()
 	if cons.config.VoteBatchLimit == -1 {
-		cons.config.VoteBatchLimit = cons.resources.VldStore.WorkerCount()
+		cons.config.VoteBatchLimit = max(cons.resources.VldStore.WorkerCount()/2, 12)
 	}
 	cons.voterState.setVoteBatchLimit(cons.config.VoteBatchLimit)
 
@@ -149,7 +149,7 @@ func (cons *Consensus) setupPPovState() {
 	cons.leaderState.setBatchSignLimit(cons.resources.VldStore.MajorityVoterCount())
 	cons.leaderState.setBatchWaitTime(cons.config.BatchWaitTime)
 	if cons.config.BlockBatchLimit == -1 {
-		cons.config.BlockBatchLimit = cons.resources.VldStore.WorkerCount()
+		cons.config.BlockBatchLimit = max(cons.resources.VldStore.WorkerCount()/2, 12)
 	}
 	cons.leaderState.setBlockBatchLimit(cons.config.BlockBatchLimit)
 }

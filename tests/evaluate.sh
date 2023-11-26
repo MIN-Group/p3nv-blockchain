@@ -23,14 +23,14 @@ function set_node_count() {
 #LoadSubmitNodes = []int{0}
 #CheckRotation = false
 #BroadcastTx = false
-#BenchDuration = 1 * time.Minute
+#BenchDuration = 8 * time.Minute
 #BenchLoads = []int{20000}
 function run_experiment_basic() {
   mkdir -p ./workdir/experiment-ppov/
   >./workdir/experiment-ppov.log
 
   echo "> starting experiment 1: PPoV"
-  for i in {4..28..4}; do
+  for i in {4..28..2}; do
     set_node_count "$i"
     go run . >>./workdir/experiment-ppov.log 2>&1
   done

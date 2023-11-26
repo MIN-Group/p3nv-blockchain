@@ -48,7 +48,7 @@ var (
 
 	// run benchmark, otherwise run experiments
 	RunBenchmark  = true
-	BenchDuration = 5 * time.Minute
+	BenchDuration = 1 * time.Minute
 	BenchLoads    = []int{5000}
 
 	SetupClusterTemplate = false
