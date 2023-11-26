@@ -109,7 +109,7 @@ func (store *txStore) popTxsFromQueue(max int) []*core.Transaction {
 	}
 	ret := make([]*core.Transaction, count)
 	for i := range ret {
-		item := (heap.Pop(store.txq)).(*txItem)
+		item := heap.Pop(store.txq).(*txItem)
 		ret[i] = item.tx
 	}
 	return ret

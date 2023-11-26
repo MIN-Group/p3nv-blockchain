@@ -17,11 +17,11 @@ type hsDriver struct {
 	resources *Resources
 	config    Config
 
-	checkTxDelay time.Duration //检测TxPool交易数量的延迟
-
-	state *state
-
+	state       *state
 	leaderState *leaderState
+	voterState  *voterState
+
+	checkTxDelay time.Duration //检测TxPool交易数量的延迟
 }
 
 // 验证hsDriver实现了hotstuff的Driver
@@ -32,7 +32,12 @@ func (hsd *hsDriver) MajorityValidatorCount() int {
 }
 
 func (hsd *hsDriver) CreateLeaf(parent hotstuff.Block, qc hotstuff.QC, height uint64) hotstuff.Block {
-	headers := hsd.leaderState.popReadyHeaders()
+	var headers []*core.BatchHeader
+	if VoteBatchFlag {
+		headers = hsd.leaderState.popReadyHeaders()
+	} else {
+		headers = hsd.voterState.popBatchHeaders()
+	}
 	txs := hsd.extractBatchTxs(headers)
 	//core.Block的链式调用
 	blk := core.NewBlock().
@@ -46,8 +51,8 @@ func (hsd *hsDriver) CreateLeaf(parent hotstuff.Block, qc hotstuff.QC, height ui
 		SetTimestamp(time.Now().UnixNano()).
 		Sign(hsd.resources.Signer)
 	hsd.state.setBlock(blk)
-	widx := hsd.resources.VldStore.GetWorkerIndex(hsd.resources.Signer.PublicKey())
-	logger.I().Debugw("generated block", "batches", len(headers), "txs", len(blk.Transactions()), "worker", widx)
+	idx := hsd.resources.VldStore.GetWorkerIndex(hsd.resources.Signer.PublicKey())
+	logger.I().Debugw("generated block", "batches", len(headers), "txs", len(blk.Transactions()), "leader", idx)
 	return newHsBlock(blk, hsd.state)
 }
 
@@ -70,7 +75,6 @@ func (hsd *hsDriver) extractBatchTxs(headers []*core.BatchHeader) [][]byte {
 	txs := make([][]byte, 0)
 	for _, batch := range headers {
 		for _, hash := range batch.Transactions() {
-
 			if _, ok := txSet[string(hash)]; ok {
 				continue //重复交易则跳过
 			}
@@ -78,7 +82,6 @@ func (hsd *hsDriver) extractBatchTxs(headers []*core.BatchHeader) [][]byte {
 				continue //已提交交易则跳过
 			}
 			txSet[string(hash)] = struct{}{} //集合去重
-
 			txs = append(txs, hash)
 		}
 	}

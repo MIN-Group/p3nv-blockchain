@@ -39,8 +39,14 @@ func (v *voterState) hasEnoughBatch() bool {
 	return len(v.batchQ) >= v.voteBatchLimit
 }
 
-// popBatch 从队列头部弹出num个Batch
-func (v *voterState) popBatch() []*core.BatchHeader {
+func (v *voterState) getBatchNum() int {
+	v.mtxState.RLock()
+	defer v.mtxState.RUnlock()
+	return len(v.batchQ)
+}
+
+// popBatchHeaders 从队列头部弹出num个Batch
+func (v *voterState) popBatchHeaders() []*core.BatchHeader {
 	v.mtxState.Lock()
 	defer v.mtxState.Unlock()
 

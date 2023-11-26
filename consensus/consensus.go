@@ -122,9 +122,10 @@ func (cons *Consensus) setupHsDriver() {
 	cons.hsDriver = &hsDriver{
 		resources:    cons.resources,
 		config:       cons.config,
-		checkTxDelay: 10 * time.Millisecond,
 		state:        cons.state,
 		leaderState:  cons.leaderState,
+		voterState:   cons.voterState,
+		checkTxDelay: 50 * time.Millisecond,
 	}
 }
 

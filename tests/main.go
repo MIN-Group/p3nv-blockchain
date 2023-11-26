@@ -39,7 +39,7 @@ var (
 	BroadcastTx    = false
 
 	// run tests in remote linux cluster
-	RemoteLinuxCluster    = false // if false it'll use local cluster (running multiple nodes on single local machine)
+	RemoteLinuxCluster    = true // if false it'll use local cluster (running multiple nodes on single local machine)
 	RemoteSetupRequired   = true
 	RemoteInstallRequired = false // if false it will not try to install dstat on remote machine
 	RemoteRunRequired     = false // if false it will not run dstat on remote machine
@@ -47,9 +47,9 @@ var (
 	RemoteHostsPath       = "hosts"
 
 	// run benchmark, otherwise run experiments
-	RunBenchmark  = false
-	BenchDuration = 1 * time.Minute
-	BenchLoads    = []int{20000}
+	RunBenchmark  = true
+	BenchDuration = 5 * time.Minute
+	BenchLoads    = []int{5000}
 
 	SetupClusterTemplate = false
 )
@@ -156,6 +156,7 @@ func printAndCheckVars() {
 	fmt.Println("SetupClusterTemplate =", SetupClusterTemplate)
 	fmt.Println("consensus.ExecuteTxFlag =", consensus.ExecuteTxFlag)
 	fmt.Println("consensus.PreserveTxFlag =", consensus.PreserveTxFlag)
+	fmt.Println("consensus.VoteBatchFlag =", consensus.VoteBatchFlag)
 	fmt.Println()
 	pass := true
 	if !RunBenchmark && len(LoadSubmitNodes) != 0 {
@@ -181,11 +182,11 @@ func printAndCheckVars() {
 		pass = false
 	}
 	if !consensus.ExecuteTxFlag && !RunBenchmark {
-		fmt.Println("!consensus.ExecuteTxFlag ===> RunBenchmark OR !RunBenchmark ===> consensus.ExecuteTxFlag")
+		fmt.Println("!consensus.ExecuteTxFlag ===> RunBenchmark")
 		pass = false
 	}
 	if consensus.PreserveTxFlag && !RunBenchmark {
-		fmt.Println("consensus.PreserveTxFlag ===> RunBenchmark OR !RunBenchmark ===> !consensus.PreserveTxFlag")
+		fmt.Println("consensus.PreserveTxFlag ===> RunBenchmark")
 		pass = false
 	}
 	if consensus.ExecuteTxFlag && consensus.PreserveTxFlag {

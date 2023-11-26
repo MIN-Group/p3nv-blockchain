@@ -143,6 +143,11 @@ func (m *MockMsgService) BroadcastNewView(qc *core.QuorumCert) error {
 	return args.Error(0)
 }
 
+func (m *MockMsgService) SendBatch(pubKey *core.PublicKey, batch *core.Batch) error {
+	args := m.Called(pubKey, batch)
+	return args.Error(0)
+}
+
 func (m *MockMsgService) SendVote(pubKey *core.PublicKey, vote *core.Vote) error {
 	args := m.Called(pubKey, vote)
 	return args.Error(0)

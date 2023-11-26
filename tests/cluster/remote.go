@@ -163,7 +163,7 @@ func (ftry *RemoteFactory) setupRemoteServerOne(i int) error {
 		"sudo", "killall", "dstat", ";",
 		"mkdir", "-p", ftry.workDirs[i], ";",
 		"cd", ftry.workDirs[i], ";",
-		"rm", "-r", "template",
+		"rm", "-rf", "template",
 	)
 	return RunCommand(cmd)
 }

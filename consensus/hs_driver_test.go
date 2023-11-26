@@ -66,10 +66,15 @@ func TestHsDriver_CreateLeaf(t *testing.T) {
 		storage.On("HasTx", tx2).Return(false)
 	}
 
-	hsd.leaderState = newLeaderState().setBatchWaitTime(3 * time.Second).setBatchSignLimit(1).setBlockBatchLimit(1)
 	batch := core.NewBatch().Header().SetTransactions(txsInQ).Sign(signer)
-	batchVote := core.NewBatchVote().Build([]*core.BatchHeader{batch}, signer)
-	hsd.leaderState.addBatchVote(batchVote)
+	if VoteBatchFlag {
+		hsd.leaderState = newLeaderState().setBatchWaitTime(3 * time.Second).setBatchSignLimit(1).setBlockBatchLimit(1)
+		batchVote := core.NewBatchVote().Build([]*core.BatchHeader{batch}, signer)
+		hsd.leaderState.addBatchVote(batchVote)
+	} else {
+		hsd.voterState = newVoterState().setVoteBatchLimit(1)
+		hsd.voterState.addBatch(batch)
+	}
 
 	txpool := new(MockTxPool)
 	if ExecuteTxFlag {

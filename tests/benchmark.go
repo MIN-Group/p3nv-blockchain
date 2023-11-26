@@ -119,7 +119,7 @@ func (bm *Benchmark) runWithLoad(tps int) error {
 		}
 		bm.downloadFiles()
 		bm.removeDB()
-		fmt.Println("Removed DB, Done\n")
+		fmt.Print("Removed DB, Done\n\n")
 	}
 	return bm.err
 }
@@ -285,10 +285,12 @@ func (bm *Benchmark) onTick() error {
 	go func() {
 		defer wg.Done()
 		meas.TxPoolStatus = testutil.GetTxPoolStatusAll(bm.cluster)
-		if meas.TxPoolStatus[0].Queue >= 30000 {
-			bm.loadGen.Pause()
-		} else if meas.TxPoolStatus[0].Queue <= 10000 {
-			bm.loadGen.UnPause()
+		if len(meas.TxPoolStatus) >= 1 {
+			if meas.TxPoolStatus[0].Queue >= 30000 {
+				bm.loadGen.Pause()
+			} else if meas.TxPoolStatus[0].Queue <= 10000 {
+				bm.loadGen.UnPause()
+			}
 		}
 	}()
 	if consensus.ExecuteTxFlag {

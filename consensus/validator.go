@@ -33,7 +33,9 @@ func (vld *validator) start() {
 	}
 	vld.stopCh = make(chan struct{})
 	go vld.batchLoop()
-	go vld.batchVoteLoop()
+	if VoteBatchFlag {
+		go vld.batchVoteLoop()
+	}
 	go vld.proposalLoop()
 	go vld.voteLoop()
 	go vld.newViewLoop()
@@ -146,19 +148,30 @@ func (vld *validator) onReceiveBatch(batch *core.Batch) error {
 	if err := vld.resources.TxPool.StorePendingTxs(batch.TxList()); err != nil {
 		return err
 	}
-	vld.voterState.addBatch(batch.Header()) //TODO 存在非投票节点Batch队列溢出的问题
 	widx := vld.resources.VldStore.GetWorkerIndex(batch.Header().Proposer())
 	logger.I().Debugw("received batch", "worker", widx, "txs", len(batch.Header().Transactions()))
-	//如果当前节点是Voter且收到了足够的Batch，则对Batch批量投票
-	if vld.state.isThisNodeVoter() && vld.voterState.hasEnoughBatch() {
-		signer := vld.resources.Signer
-		vote := core.NewBatchVote().Build(vld.voterState.popBatch(), signer)
-		vld.leaderState.addBatchVote(vote)
-		vidx := vld.resources.VldStore.GetVoterIndex(signer.PublicKey())
-		logger.I().Debugf("generated batch vote by voter %d", vidx)
-		leader := vld.resources.VldStore.GetWorker(vld.state.getLeaderIndex())
-		vld.resources.MsgSvc.SendBatchVote(leader, vote)
+
+	if VoteBatchFlag {
+		if vld.state.isThisNodeVoter() {
+			vld.voterState.addBatch(batch.Header())
+			if vld.voterState.hasEnoughBatch() {
+				signer := vld.resources.Signer
+				vote := core.NewBatchVote().Build(vld.voterState.popBatchHeaders(), signer)
+				if vld.state.isThisNodeLeader() {
+					vld.leaderState.addBatchVote(vote)
+				}
+				vidx := vld.resources.VldStore.GetVoterIndex(signer.PublicKey())
+				logger.I().Debugf("generated batch vote by voter %d", vidx)
+				leader := vld.resources.VldStore.GetWorker(vld.state.getLeaderIndex())
+				vld.resources.MsgSvc.SendBatchVote(leader, vote)
+			}
+		}
+	} else {
+		if vld.state.isThisNodeLeader() {
+			vld.voterState.addBatch(batch.Header())
+		}
 	}
+
 	return nil
 }
 
@@ -370,9 +383,11 @@ func (vld *validator) onReceiveBatchVote(vote *core.BatchVote) error {
 	if err := vote.Validate(vld.resources.VldStore); err != nil {
 		return err
 	}
-	vld.leaderState.addBatchVote(vote)
-	pidx := vld.resources.VldStore.GetVoterIndex(vote.Voter())
-	logger.I().Debugf("received batch vote from voter %d", pidx)
+	if vld.state.isThisNodeLeader() {
+		vld.leaderState.addBatchVote(vote)
+		pidx := vld.resources.VldStore.GetVoterIndex(vote.Voter())
+		logger.I().Debugf("received batch vote from voter %d", pidx)
+	}
 	return nil
 }
 

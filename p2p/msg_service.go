@@ -105,6 +105,22 @@ func (svc *MsgService) BroadcastBatch(batch *core.Batch) error {
 	return svc.broadcastData(MsgTypeBatch, data)
 }
 
+func (svc *MsgService) BroadcastNewView(qc *core.QuorumCert) error {
+	data, err := qc.Marshal()
+	if err != nil {
+		return err
+	}
+	return svc.broadcastData(MsgTypeNewView, data)
+}
+
+func (svc *MsgService) SendBatch(pubKey *core.PublicKey, batch *core.Batch) error {
+	data, err := batch.Marshal()
+	if err != nil {
+		return err
+	}
+	return svc.sendData(pubKey, MsgTypeBatch, data)
+}
+
 func (svc *MsgService) SendVote(pubKey *core.PublicKey, vote *core.Vote) error {
 	data, err := vote.Marshal()
 	if err != nil {
@@ -127,14 +143,6 @@ func (svc *MsgService) SendNewView(pubKey *core.PublicKey, qc *core.QuorumCert) 
 		return err
 	}
 	return svc.sendData(pubKey, MsgTypeNewView, data)
-}
-
-func (svc *MsgService) BroadcastNewView(qc *core.QuorumCert) error {
-	data, err := qc.Marshal()
-	if err != nil {
-		return err
-	}
-	return svc.broadcastData(MsgTypeNewView, data)
 }
 
 func (svc *MsgService) BroadcastTxList(txList *core.TxList) error {

@@ -97,9 +97,16 @@ func (pm *pacemaker) run() {
 
 func (pm *pacemaker) nextBlockDelay() *time.Timer {
 	delay := pm.config.BlockDelay
-	if pm.leaderState.getBatchReadyNum() < pm.config.BlockBatchLimit {
-		delay += time.Duration(pm.config.BlockBatchLimit-
-			pm.leaderState.getBatchReadyNum()) * (pm.config.TxWaitTime / 2)
+	if VoteBatchFlag {
+		if pm.leaderState.getBatchReadyNum() < pm.config.BlockBatchLimit {
+			delay += time.Duration(pm.config.BlockBatchLimit-
+				pm.leaderState.getBatchReadyNum()) * (pm.config.TxWaitTime / 2)
+		}
+	} else {
+		if pm.voterState.getBatchNum() < pm.config.BlockBatchLimit {
+			delay += time.Duration(pm.config.BlockBatchLimit-
+				pm.voterState.getBatchNum()) * (pm.config.TxWaitTime / 2)
+		}
 	}
 	return time.NewTimer(delay)
 }
@@ -111,9 +118,6 @@ func (pm *pacemaker) nextProposeTimeout() *time.Timer {
 
 func (pm *pacemaker) nextBatchTimeout() *time.Timer {
 	batchWait := pm.config.BatchTimeout
-	if pm.resources.TxPool.GetStatus().Total == 0 {
-		batchWait += pm.config.TxWaitTime
-	}
 	return time.NewTimer(batchWait)
 }
 
@@ -165,8 +169,19 @@ func (pm *pacemaker) newBatch() {
 
 	signer := pm.resources.Signer
 	batch := core.NewBatch().SetTransactions(txs).SetTimestamp(time.Now().UnixNano()).Sign(signer)
-	pm.voterState.addBatch(batch.Header())
-	pm.resources.MsgSvc.BroadcastBatch(batch)
+	if VoteBatchFlag {
+		if pm.state.isThisNodeVoter() {
+			pm.voterState.addBatch(batch.Header())
+		}
+		pm.resources.MsgSvc.BroadcastBatch(batch)
+	} else {
+		if pm.state.isThisNodeLeader() {
+			pm.voterState.addBatch(batch.Header())
+		}
+		leader := pm.resources.VldStore.GetWorker(pm.state.getLeaderIndex())
+		pm.resources.MsgSvc.SendBatch(leader, batch)
+	}
+
 	widx := pm.resources.VldStore.GetWorkerIndex(signer.PublicKey())
 	logger.I().Debugw("generated batch", "worker", widx,
 		"txs", len(batch.Header().Transactions()))

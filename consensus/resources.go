@@ -41,6 +41,7 @@ type MsgService interface {
 	BroadcastProposal(blk *core.Block) error
 	BroadcastBatch(batch *core.Batch) error
 	BroadcastNewView(qc *core.QuorumCert) error
+	SendBatch(pubKey *core.PublicKey, batch *core.Batch) error
 	SendVote(pubKey *core.PublicKey, vote *core.Vote) error
 	SendBatchVote(pubKey *core.PublicKey, vote *core.BatchVote) error
 	RequestBlock(pubKey *core.PublicKey, hash []byte) (*core.Block, error)
