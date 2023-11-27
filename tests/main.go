@@ -25,9 +25,9 @@ var (
 	WorkDir   = "./workdir"
 	NodeCount = 4
 
-	LoadTxPerSec    = 100
+	LoadTxPerSec    = 10
 	LoadJobPerTick  = 1000
-	LoadSubmitNodes = []int{0}
+	LoadSubmitNodes = []int{}
 	LoadBatchSubmit = true //whether to enable batch transaction submission
 
 	//chaincode priority: empty > ppovcoin bincc > ppovcoin
@@ -37,18 +37,19 @@ var (
 	BroadcastTx    = true
 
 	// run tests in remote linux cluster
-	RemoteLinuxCluster    = false // if false it'll use local cluster (running multiple nodes on single local machine)
+	RemoteLinuxCluster    = true // if false it'll use local cluster (running multiple nodes on single local machine)
 	RemoteSetupRequired   = true
 	RemoteInstallRequired = false // if false it will not try to install dstat on remote machine
+	RemoteRunRequired     = false // if false it will not run dstat on remote machine
 	RemoteKeySSH          = "~/.ssh/id_rsa"
 	RemoteHostsPath       = "hosts"
 
 	// run benchmark, otherwise run experiments
 	RunBenchmark  = false
-	BenchDuration = 5 * time.Minute
-	BenchLoads    = []int{5000, 10000, 15000}
+	BenchDuration = max(5*time.Minute, time.Duration(NodeCount/2))
+	BenchLoads    = []int{10000}
 
-	SetupClusterTemplate = true
+	SetupClusterTemplate = false
 )
 
 func getNodeConfig() node.Config {
@@ -193,11 +194,11 @@ func printAndCheckVars() {
 		pass = false
 	}
 	if !consensus.ExecuteTxFlag && !RunBenchmark {
-		fmt.Println("!consensus.ExecuteTxFlag ===> RunBenchmark OR !RunBenchmark ===> consensus.ExecuteTxFlag")
+		fmt.Println("!consensus.ExecuteTxFlag ===> RunBenchmark")
 		pass = false
 	}
 	if consensus.PreserveTxFlag && !RunBenchmark {
-		fmt.Println("consensus.PreserveTxFlag ===> RunBenchmark OR !RunBenchmark ===> !consensus.PreserveTxFlag")
+		fmt.Println("consensus.PreserveTxFlag ===> RunBenchmark")
 		pass = false
 	}
 	if consensus.ExecuteTxFlag && consensus.PreserveTxFlag {

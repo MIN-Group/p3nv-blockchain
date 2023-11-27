@@ -21,8 +21,7 @@ type validator struct {
 	hotstuff  *hotstuff.Hotstuff
 
 	mtxProposal sync.Mutex
-
-	stopCh chan struct{}
+	stopCh      chan struct{}
 }
 
 func (vld *validator) start() {
@@ -51,7 +50,7 @@ func (vld *validator) stop() {
 }
 
 func (vld *validator) proposalLoop() {
-	sub := vld.resources.MsgSvc.SubscribeProposal(100)
+	sub := vld.resources.MsgSvc.SubscribeProposal(10)
 	defer sub.Unsubscribe()
 
 	for {
@@ -68,7 +67,7 @@ func (vld *validator) proposalLoop() {
 }
 
 func (vld *validator) voteLoop() {
-	sub := vld.resources.MsgSvc.SubscribeVote(1000)
+	sub := vld.resources.MsgSvc.SubscribeVote(100)
 	defer sub.Unsubscribe()
 
 	for {
@@ -85,7 +84,7 @@ func (vld *validator) voteLoop() {
 }
 
 func (vld *validator) newViewLoop() {
-	sub := vld.resources.MsgSvc.SubscribeNewView(100)
+	sub := vld.resources.MsgSvc.SubscribeNewView(10)
 	defer sub.Unsubscribe()
 
 	for {

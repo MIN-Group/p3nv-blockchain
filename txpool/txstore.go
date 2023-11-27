@@ -107,7 +107,7 @@ func (store *txStore) popTxsFromQueue(max int) [][]byte {
 	}
 	ret := make([][]byte, count)
 	for i := range ret {
-		item := (heap.Pop(store.txq)).(*txItem)
+		item := heap.Pop(store.txq).(*txItem)
 		ret[i] = item.tx.Hash()
 	}
 	return ret
@@ -127,13 +127,6 @@ func (store *txStore) getTxsFromQueue(max int) [][]byte {
 		ret[i] = item.tx.Hash()
 	}
 	return ret
-}
-
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
 }
 
 func (store *txStore) putTxsToQueue(hashes [][]byte) {

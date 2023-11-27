@@ -11,9 +11,12 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"runtime"
 	"syscall"
 
 	"github.com/multiformats/go-multiaddr"
+	"go.uber.org/zap"
+
 	"github.com/wooyang2018/ppov-blockchain/consensus"
 	"github.com/wooyang2018/ppov-blockchain/core"
 	"github.com/wooyang2018/ppov-blockchain/execution"
@@ -21,7 +24,6 @@ import (
 	"github.com/wooyang2018/ppov-blockchain/p2p"
 	"github.com/wooyang2018/ppov-blockchain/storage"
 	"github.com/wooyang2018/ppov-blockchain/txpool"
-	"go.uber.org/zap"
 )
 
 type Node struct {
@@ -46,6 +48,7 @@ func Run(config Config) {
 	node.setupBinccDir()
 	node.setupLogger()
 	node.readFiles()
+	node.limitCPUs()
 	node.setupComponents()
 	logger.I().Infow("node setup done")
 	node.consensus.Start()
@@ -55,6 +58,14 @@ func Run(config Config) {
 	<-c
 	logger.I().Info("node killed")
 	node.consensus.Stop()
+}
+
+func (node *Node) limitCPUs() {
+	if consensus.PreserveTxFlag {
+		runtime.GOMAXPROCS(MaxProcsNum)
+		logger.I().Debugf("setup node to use %d out of %d CPUs",
+			runtime.GOMAXPROCS(0), runtime.NumCPU())
+	}
 }
 
 func (node *Node) setupLogger() {
@@ -72,24 +83,24 @@ func (node *Node) setupLogger() {
 }
 
 func (node *Node) setupBinccDir() {
-	node.config.ExecutionConfig.BinccDir = path.Join(node.config.Datadir, "bincc")
+	node.config.ExecutionConfig.BinccDir = path.Join(node.config.DataDir, "bincc")
 	os.Mkdir(node.config.ExecutionConfig.BinccDir, 0755)
 }
 
 func (node *Node) readFiles() {
 	var err error
-	node.privKey, err = readNodeKey(node.config.Datadir)
+	node.privKey, err = readNodeKey(node.config.DataDir)
 	if err != nil {
 		logger.I().Fatalw("read key failed", "error", err)
 	}
 	logger.I().Infow("read nodekey", "pubkey", node.privKey.PublicKey())
 
-	node.genesis, err = readGenesis(node.config.Datadir)
+	node.genesis, err = readGenesis(node.config.DataDir)
 	if err != nil {
 		logger.I().Fatalw("read genesis failed", "error", err)
 	}
 
-	node.peers, err = readPeers(node.config.Datadir)
+	node.peers, err = readPeers(node.config.DataDir)
 	if err != nil {
 		logger.I().Fatalw("read peers failed", "error", err)
 	}
@@ -114,7 +125,7 @@ func (node *Node) setupValidatorStore() {
 }
 
 func (node *Node) setupStorage() {
-	db, err := storage.NewLevelDB(path.Join(node.config.Datadir, "db"))
+	db, err := storage.NewLevelDB(path.Join(node.config.DataDir, "db"))
 	if err != nil {
 		logger.I().Fatalw("setup storage failed", "error", err)
 	}

@@ -60,7 +60,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&nodeConfig.Debug,
 		FlagDebug, false, "debug mode")
 
-	rootCmd.PersistentFlags().StringVarP(&nodeConfig.Datadir,
+	rootCmd.PersistentFlags().StringVarP(&nodeConfig.DataDir,
 		FlagDataDir, "d", "", "blockchain data directory")
 	rootCmd.MarkPersistentFlagRequired(FlagDataDir)
 
