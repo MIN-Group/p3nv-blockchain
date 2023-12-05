@@ -48,25 +48,38 @@ func (pm *pacemaker) run() {
 	subQC := pm.hotstuff.SubscribeNewQCHigh()
 	defer subQC.Unsubscribe()
 
-	for {
-		blkDelay := time.After(pm.config.BlockDelay)
+	if PreserveTxFlag {
+		time.Sleep(2 * time.Second)
 		pm.newBlock()
-		beatT := pm.nextProposeTimeout()
-
-		select {
-		case <-pm.stopCh:
-			return
-
-		// either beatdelay timeout or I'm able to create qc
-		case <-beatT.C:
-		case <-subQC.Events():
+		for {
+			select {
+			case <-pm.stopCh:
+				return
+			case <-subQC.Events():
+				pm.newBlock()
+			}
 		}
-		beatT.Stop()
+	} else {
+		for {
+			blkDelay := time.After(pm.config.BlockDelay)
+			pm.newBlock()
+			beatT := pm.nextProposeTimeout()
 
-		select {
-		case <-pm.stopCh:
-			return
-		case <-blkDelay:
+			select {
+			case <-pm.stopCh:
+				return
+
+			// either beatdelay timeout or I'm able to create qc
+			case <-beatT.C:
+			case <-subQC.Events():
+			}
+			beatT.Stop()
+
+			select {
+			case <-pm.stopCh:
+				return
+			case <-blkDelay:
+			}
 		}
 	}
 }

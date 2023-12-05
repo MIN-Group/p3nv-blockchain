@@ -37,7 +37,7 @@ type Config struct {
 var DefaultConfig = Config{
 	BlockTxLimit:  20000,
 	TxWaitTime:    1 * time.Second,
-	BeatTimeout:   1000 * time.Millisecond,
+	BeatTimeout:   1500 * time.Millisecond,
 	BlockDelay:    500 * time.Millisecond,
 	ViewWidth:     60 * time.Second,
 	LeaderTimeout: 20 * time.Second,

@@ -26,8 +26,8 @@ var (
 	NodeCount = 4
 
 	LoadTxPerSec    = 10
-	LoadJobPerTick  = 1000
-	LoadSubmitNodes = []int{}
+	LoadJobPerTick  = 500
+	LoadSubmitNodes = []int{0}
 	LoadBatchSubmit = true //whether to enable batch transaction submission
 
 	//chaincode priority: empty > ppovcoin bincc > ppovcoin
@@ -47,7 +47,7 @@ var (
 	// run benchmark, otherwise run experiments
 	RunBenchmark  = false
 	BenchDuration = max(5*time.Minute, time.Duration(NodeCount/2))
-	BenchLoads    = []int{10000}
+	BenchLoads    = []int{5000}
 
 	SetupClusterTemplate = false
 )

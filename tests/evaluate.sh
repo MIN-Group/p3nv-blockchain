@@ -16,11 +16,11 @@ function set_node_count() {
 #ExecuteTxFlag = false
 #PreserveTxFlag = true
 #BlockTxLimit = 20000
-#LoadJobPerTick = 1000
+#LoadJobPerTick = 500
 #LoadSubmitNodes = []int{0}
 #CheckRotation = false
 #BroadcastTx = false
-#BenchLoads = []int{10000}
+#BenchLoads = []int{5000}
 function run_experiment_basic() {
   mkdir -p ./workdir/experiment-pov/
   >./workdir/experiment-pov.log

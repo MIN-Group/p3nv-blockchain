@@ -112,12 +112,12 @@ func (bm *Benchmark) runWithLoad(tps int) error {
 		bm.cluster.Stop()
 		fmt.Println("Stopped cluster")
 
-		bm.saveResults()
+		bm.saveResults(true)
 		if RemoteRunRequired {
 			bm.stopDstat()
 			fmt.Println("Downloaded dstat records")
 		}
-		bm.downloadFiles()
+		bm.downloadFiles(true)
 		bm.removeDB()
 		fmt.Print("Removed DB, Done\n\n")
 	}
@@ -198,12 +198,14 @@ func (bm *Benchmark) stopDstat() {
 	wg.Wait()
 }
 
-func (bm *Benchmark) downloadFiles() {
+func (bm *Benchmark) downloadFiles(firstOnly bool) {
+	n := min(bm.cluster.NodeCount(), 4)
+	if firstOnly {
+		n = 1
+	}
+
 	var wg sync.WaitGroup
-	for i := 0; i < bm.cluster.NodeCount(); i++ {
-		if i >= 4 && i < bm.cluster.NodeCount()-1 {
-			continue
-		}
+	for i := 0; i < n; i++ {
 		node := bm.cluster.GetNode(i).(*cluster.RemoteNode)
 		wg.Add(2)
 
@@ -230,6 +232,7 @@ func (bm *Benchmark) downloadFiles() {
 	}
 	wg.Wait()
 }
+
 func (bm *Benchmark) removeDB() {
 	var wg sync.WaitGroup
 	for i := 0; i < bm.cluster.NodeCount(); i++ {
@@ -332,7 +335,7 @@ func (bm *Benchmark) measureLatency() time.Duration {
 	return time.Since(start)
 }
 
-func (bm *Benchmark) saveResults() error {
+func (bm *Benchmark) saveResults(firstOnly bool) error {
 	if len(bm.measurements) == 0 {
 		return fmt.Errorf("no measurements to save")
 	}
@@ -340,7 +343,11 @@ func (bm *Benchmark) saveResults() error {
 	if err := bm.savePerformance(); err != nil {
 		return err
 	}
-	for i := 0; i < bm.cluster.NodeCount(); i++ {
+	n := min(bm.cluster.NodeCount(), 4)
+	if firstOnly {
+		n = 1
+	}
+	for i := 0; i < n; i++ {
 		if err := bm.saveStatusOneNode(i); err != nil {
 			return err
 		}
