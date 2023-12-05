@@ -145,8 +145,10 @@ func (vld *validator) onReceiveBatch(batch *core.Batch) error {
 	if err := batch.Header().Validate(vld.resources.VldStore); err != nil {
 		return err
 	}
-	if err := vld.resources.TxPool.StorePendingTxs(batch.TxList()); err != nil {
-		return err
+	if !PreserveTxFlag {
+		if err := vld.resources.TxPool.StorePendingTxs(batch.TxList()); err != nil {
+			return err
+		}
 	}
 	widx := vld.resources.VldStore.GetWorkerIndex(batch.Header().Proposer())
 	logger.I().Debugw("received batch", "worker", widx, "txs", len(batch.Header().Transactions()))

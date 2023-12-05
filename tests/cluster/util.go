@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -87,7 +88,7 @@ func SetupTemplateDir(dir string, keys []*core.PrivateKey, vlds []node.Peer, Wor
 		Weights: make([]int, 0, 0),
 	}
 
-	workers := PickUniqueRandoms(len(keys), int(float32(len(keys))*WorkerProportion))
+	workers := PickUniqueRandoms(len(keys), int(float32(len(keys))*WorkerProportion), true)
 	fmt.Printf("Setup workers: %v\n", workers)
 	for _, v := range workers {
 		genesis.Workers = append(genesis.Workers, keys[v].PublicKey().String())
@@ -99,12 +100,12 @@ func SetupTemplateDir(dir string, keys []*core.PrivateKey, vlds []node.Peer, Wor
 	unselectedIndexes := GetUnselectedIndexes(len(keys), workers)
 	if len(unselectedIndexes) <= int(float32(len(keys))*VoterProportion) {
 		voters = append(voters, unselectedIndexes...)
-		indexes := PickUniqueRandoms(len(workers), int(float32(len(keys))*VoterProportion)-len(unselectedIndexes))
+		indexes := PickUniqueRandoms(len(workers), int(float32(len(keys))*VoterProportion)-len(unselectedIndexes), true)
 		for _, v := range indexes {
 			voters = append(voters, workers[v])
 		}
 	} else {
-		indexes := PickUniqueRandoms(len(unselectedIndexes), int(float32(len(keys))*VoterProportion))
+		indexes := PickUniqueRandoms(len(unselectedIndexes), int(float32(len(keys))*VoterProportion), true)
 		for _, v := range indexes {
 			voters = append(voters, unselectedIndexes[v])
 		}
@@ -194,7 +195,7 @@ func AddPPoVFlags(cmd *exec.Cmd, config *node.Config) {
 		config.ConsensusConfig.BenchmarkPath)
 }
 
-func PickUniqueRandoms(total, count int) []int {
+func PickUniqueRandoms(total, count int, isSort bool) []int {
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 	unique := make(map[int]struct{}, count)
 	for len(unique) < count {
@@ -203,6 +204,9 @@ func PickUniqueRandoms(total, count int) []int {
 	ret := make([]int, 0, count)
 	for v := range unique {
 		ret = append(ret, v)
+	}
+	if isSort {
+		sort.Ints(ret)
 	}
 	return ret
 }

@@ -28,7 +28,7 @@ var (
 	VoterProportion  float32 = 1
 
 	LoadTxPerSec    = 10
-	LoadJobPerTick  = 500
+	LoadJobPerTick  = 1000
 	LoadSubmitNodes = []int{}
 	LoadBatchSubmit = true //whether to enable batch transaction submission
 
@@ -48,8 +48,8 @@ var (
 
 	// run benchmark, otherwise run experiments
 	RunBenchmark  = true
-	BenchDuration = 1 * time.Minute
-	BenchLoads    = []int{5000}
+	BenchDuration = max(5*time.Minute, time.Duration(NodeCount/2))
+	BenchLoads    = []int{10000}
 
 	SetupClusterTemplate = false
 )

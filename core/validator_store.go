@@ -28,7 +28,7 @@ type ValidatorStore interface {
 	GetWorkerWeight(idx int) int          //获取指定索引的记账节点权重
 }
 
-type ppovValidatorStore struct {
+type validatorStore struct {
 	voters  []*PublicKey //投票节点列表
 	workers []*PublicKey //记账节点列表
 	weights []int        //记账节点权重列表
@@ -40,7 +40,7 @@ type ppovValidatorStore struct {
 	validators []*PublicKey //投票节点和记账节点的集合
 }
 
-var _ ValidatorStore = (*ppovValidatorStore)(nil)
+var _ ValidatorStore = (*validatorStore)(nil)
 
 func StringToPubKey(v string) *PublicKey {
 	key, err := base64.StdEncoding.DecodeString(v)
@@ -52,7 +52,7 @@ func StringToPubKey(v string) *PublicKey {
 }
 
 func NewValidatorStore(workers []string, weights []int, voters []string) ValidatorStore {
-	store := &ppovValidatorStore{
+	store := &validatorStore{
 		weights: weights,
 	}
 
@@ -94,31 +94,31 @@ func NewValidatorStore(workers []string, weights []int, voters []string) Validat
 	return store
 }
 
-func (store *ppovValidatorStore) VoterCount() int {
+func (store *validatorStore) VoterCount() int {
 	return len(store.voters)
 }
 
-func (store *ppovValidatorStore) MajorityVoterCount() int {
+func (store *validatorStore) MajorityVoterCount() int {
 	return MajorityCount(store.VoterCount())
 }
 
-func (store *ppovValidatorStore) WorkerCount() int {
+func (store *validatorStore) WorkerCount() int {
 	return len(store.workers)
 }
 
-func (store *ppovValidatorStore) EnoughWorkerCount() int {
+func (store *validatorStore) EnoughWorkerCount() int {
 	return len(store.workers)
 }
 
-func (store *ppovValidatorStore) ValidatorCount() int {
+func (store *validatorStore) ValidatorCount() int {
 	return len(store.validators)
 }
 
-func (store *ppovValidatorStore) MajorityValidatorCount() int {
+func (store *validatorStore) MajorityValidatorCount() int {
 	return MajorityCount(len(store.validators))
 }
 
-func (store *ppovValidatorStore) IsVoter(pubKey *PublicKey) bool {
+func (store *validatorStore) IsVoter(pubKey *PublicKey) bool {
 	if pubKey == nil {
 		return false
 	}
@@ -126,7 +126,7 @@ func (store *ppovValidatorStore) IsVoter(pubKey *PublicKey) bool {
 	return ok
 }
 
-func (store *ppovValidatorStore) IsWorker(pubKey *PublicKey) bool {
+func (store *validatorStore) IsWorker(pubKey *PublicKey) bool {
 	if pubKey == nil {
 		return false
 	}
@@ -134,35 +134,35 @@ func (store *ppovValidatorStore) IsWorker(pubKey *PublicKey) bool {
 	return ok
 }
 
-func (store *ppovValidatorStore) GetVoter(idx int) *PublicKey {
+func (store *validatorStore) GetVoter(idx int) *PublicKey {
 	if idx >= len(store.voters) || idx < 0 {
 		return nil
 	}
 	return store.voters[idx]
 }
 
-func (store *ppovValidatorStore) GetWorker(idx int) *PublicKey {
+func (store *validatorStore) GetWorker(idx int) *PublicKey {
 	if idx >= len(store.workers) || idx < 0 {
 		return nil
 	}
 	return store.workers[idx]
 }
 
-func (store *ppovValidatorStore) GetVoterIndex(pubKey *PublicKey) int {
+func (store *validatorStore) GetVoterIndex(pubKey *PublicKey) int {
 	if pubKey == nil {
 		return 0
 	}
 	return store.voterMap[pubKey.String()]
 }
 
-func (store *ppovValidatorStore) GetWorkerIndex(pubKey *PublicKey) int {
+func (store *validatorStore) GetWorkerIndex(pubKey *PublicKey) int {
 	if pubKey == nil {
 		return 0
 	}
 	return store.workerMap[pubKey.String()]
 }
 
-func (store *ppovValidatorStore) GetWorkerWeight(idx int) int {
+func (store *validatorStore) GetWorkerWeight(idx int) int {
 	if idx >= len(store.weights) || idx < 0 {
 		return -1
 	}

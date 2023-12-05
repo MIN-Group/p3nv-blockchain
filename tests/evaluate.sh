@@ -19,12 +19,11 @@ function set_node_count() {
 #BatchTxLimit = 5000
 #BlockBatchLimit: -1
 #VoteBatchLimit:  -1
-#LoadJobPerTick = 500
-#LoadSubmitNodes = []int{0}
+#LoadJobPerTick = 1000
+#LoadSubmitNodes = []int{}
 #CheckRotation = false
 #BroadcastTx = false
-#BenchDuration = 8 * time.Minute
-#BenchLoads = []int{20000}
+#BenchLoads = []int{10000}
 function run_experiment_basic() {
   mkdir -p ./workdir/experiment-ppov/
   >./workdir/experiment-ppov.log

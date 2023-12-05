@@ -31,6 +31,9 @@ func (v *voterState) addBatch(batch *core.BatchHeader) {
 	v.mtxState.Lock()
 	defer v.mtxState.Unlock()
 	v.batchQ = append(v.batchQ, batch)
+	if PreserveTxFlag && len(v.batchQ) > 3*v.voteBatchLimit {
+		v.batchQ = v.batchQ[1:]
+	}
 }
 
 func (v *voterState) hasEnoughBatch() bool {

@@ -65,7 +65,7 @@ func SubmitTx(cls *cluster.Cluster, retryOrder []int, tx *core.Transaction) (int
 		return 0, err
 	}
 	if len(retryOrder) == 0 {
-		retryOrder = cluster.PickUniqueRandoms(cls.NodeCount(), cls.NodeCount())
+		retryOrder = cluster.PickUniqueRandoms(cls.NodeCount(), cls.NodeCount(), false)
 	}
 	var retErr error
 	for _, i := range retryOrder {
@@ -90,7 +90,7 @@ func BatchSubmitTx(cls *cluster.Cluster, retryOrder []int, txs *core.TxList) (in
 		return 0, err
 	}
 	if len(retryOrder) == 0 {
-		retryOrder = cluster.PickUniqueRandoms(cls.NodeCount(), cls.NodeCount())
+		retryOrder = cluster.PickUniqueRandoms(cls.NodeCount(), cls.NodeCount(), false)
 	}
 	var retErr error
 	for _, i := range retryOrder {
@@ -144,7 +144,7 @@ func uploadBinChainCode(cls *cluster.Cluster, binccPath string) (int, []byte, er
 		return 0, nil, err
 	}
 	var retErr error
-	retryOrder := cluster.PickUniqueRandoms(cls.NodeCount(), cls.NodeCount())
+	retryOrder := cluster.PickUniqueRandoms(cls.NodeCount(), cls.NodeCount(), false)
 	for _, i := range retryOrder {
 		if !cls.GetNode(i).IsRunning() {
 			continue

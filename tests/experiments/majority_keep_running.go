@@ -24,7 +24,7 @@ func (expm *MajorityKeepRunning) Name() string {
 // When the stopped nodes up again, they should sync the history
 func (expm *MajorityKeepRunning) Run(cls *cluster.Cluster) error {
 	total := cls.NodeCount()
-	faulty := cluster.PickUniqueRandoms(total, total-core.MajorityCount(total))
+	faulty := cluster.PickUniqueRandoms(total, total-core.MajorityCount(total), false)
 	for _, i := range faulty {
 		cls.GetNode(i).Stop()
 	}
