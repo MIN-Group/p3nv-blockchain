@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
 	"github.com/wooyang2018/ppov-blockchain/emitter"
 )
 
@@ -112,7 +113,6 @@ func TestPeer_ReadWrite(t *testing.T) {
 	rwc := newRWCLoopBack()
 	p.onConnected(rwc)
 	sub := p.SubscribeMsg()
-
 	msg := []byte("hello")
 
 	mln := new(MockListener)
@@ -125,9 +125,7 @@ func TestPeer_ReadWrite(t *testing.T) {
 	}()
 
 	assert.NoError(p.WriteMsg(msg))
-
 	time.Sleep(time.Millisecond)
-
 	mln.AssertExpectations(t)
 }
 
