@@ -28,7 +28,6 @@ type Experiment interface {
 type ExperimentRunner struct {
 	experiments []Experiment
 	cfactory    cluster.ClusterFactory
-	loadGen     *testutil.LoadGenerator
 }
 
 func (r *ExperimentRunner) Run() (pass, fail int) {
@@ -88,11 +87,10 @@ func (r *ExperimentRunner) runSingleExperiment(expm Experiment) error {
 		cluster.Sleep(10 * time.Second)
 
 		fmt.Println("Setting up load generator")
-		err = r.loadGen.SetupOnCluster(cls)
-		if err != nil {
+		if err = testutil.LoadGen.SetupOnCluster(cls); err != nil {
 			return
 		}
-		go r.loadGen.Run(loadCtx)
+		go testutil.LoadGen.Run(loadCtx)
 		fmt.Println("Load generator running")
 		cluster.Sleep(10 * time.Second)
 
@@ -103,6 +101,11 @@ func (r *ExperimentRunner) runSingleExperiment(expm Experiment) error {
 			return
 		}
 
+		if OnlyRunCluster {
+			fmt.Println("Running rapid cluster")
+			expm.Run(cls)
+			return
+		}
 		fmt.Println("==> Running experiment")
 		err = expm.Run(cls)
 		if err != nil {

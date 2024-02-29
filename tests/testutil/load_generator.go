@@ -13,6 +13,8 @@ import (
 	"github.com/wooyang2018/ppov-blockchain/tests/cluster"
 )
 
+var LoadGen *LoadGenerator
+
 type LoadGenerator struct {
 	txPerSec       int
 	jobPerTick     int //每一次嘀嗒需完成的任务数
@@ -25,12 +27,13 @@ func NewLoadGenerator(client LoadClient, tps int, jobs int) *LoadGenerator {
 	if tps < jobs {
 		jobs = tps
 	}
-	return &LoadGenerator{
+	LoadGen = &LoadGenerator{
 		txPerSec:   tps,
 		jobPerTick: jobs,
 		client:     client,
 		paused:     true,
 	}
+	return LoadGen
 }
 
 func (lg *LoadGenerator) SetupOnCluster(cls *cluster.Cluster) error {

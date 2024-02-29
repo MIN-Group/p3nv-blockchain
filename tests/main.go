@@ -47,11 +47,12 @@ var (
 	RemoteHostsPath       = "hosts"
 
 	// run benchmark, otherwise run experiments
-	RunBenchmark  = true
+	RunBenchmark  = false
 	BenchDuration = max(5*time.Minute, time.Duration(NodeCount/2))
 	BenchLoads    = []int{10000}
 
-	SetupClusterTemplate = false
+	OnlySetupCluster = false
+	OnlyRunCluster   = true
 )
 
 func getNodeConfig() node.Config {
@@ -96,21 +97,17 @@ func main() {
 		} else {
 			cfactory = makeLocalClusterFactory()
 		}
-		if SetupClusterTemplate {
-			cls, err := cfactory.SetupCluster("cluster_template")
-			if err != nil {
-				return
-			}
-			cls.EmptyChainCode = EmptyChainCode
-			cls.CheckRotation = CheckRotation
-			fmt.Println("\nThe cluster startup command is as follows:")
-			for i := 0; i < cls.NodeCount(); i++ {
-				fmt.Println(cls.GetNode(i).PrintCmd())
-			}
+
+		if OnlySetupCluster {
+			setupRapidCluster(cfactory)
 			return
 		}
-		runExperiments(testutil.NewLoadGenerator(makeLoadClient(),
-			LoadTxPerSec, LoadJobPerTick), cfactory)
+		testutil.NewLoadGenerator(makeLoadClient(), LoadTxPerSec, LoadJobPerTick)
+		if OnlyRunCluster {
+			runRapidCluster(cfactory)
+			return
+		}
+		runExperiments(cfactory)
 	}
 }
 
@@ -132,11 +129,38 @@ func runBenchmark() {
 	bm.Run()
 }
 
-func runExperiments(loadGen *testutil.LoadGenerator, cfactory cluster.ClusterFactory) {
+func setupRapidCluster(cfactory cluster.ClusterFactory) {
+	if cls, err := cfactory.SetupCluster("cluster_template"); err == nil {
+		fmt.Println("The cluster startup command is as follows.")
+		for i := 0; i < cls.NodeCount(); i++ {
+			fmt.Println(cls.GetNode(i).PrintCmd())
+		}
+	} else {
+		fmt.Println(err)
+	}
+}
+
+type KeepAliveRunning struct{}
+
+func (expm *KeepAliveRunning) Name() string {
+	return "keep_alive_running"
+}
+
+func (expm *KeepAliveRunning) Run(*cluster.Cluster) error {
+	select {}
+}
+
+func runRapidCluster(cfactory cluster.ClusterFactory) {
+	r := &ExperimentRunner{cfactory: cfactory}
+	if err := r.runSingleExperiment(&KeepAliveRunning{}); err != nil {
+		fmt.Println(err)
+	}
+}
+
+func runExperiments(cfactory cluster.ClusterFactory) {
 	r := &ExperimentRunner{
 		experiments: setupExperiments(),
 		cfactory:    cfactory,
-		loadGen:     loadGen,
 	}
 	pass, fail := r.Run()
 	fmt.Printf("\nTotal: %d  |  Pass: %d  |  Fail: %d\n", len(r.experiments), pass, fail)
@@ -153,7 +177,7 @@ func printAndCheckVars() {
 	fmt.Println("RemoteLinuxCluster =", RemoteLinuxCluster)
 	fmt.Println("RunBenchmark =", RunBenchmark)
 	fmt.Println("BenchLoads =", BenchLoads)
-	fmt.Println("SetupClusterTemplate =", SetupClusterTemplate)
+	fmt.Println("OnlySetupCluster =", OnlySetupCluster)
 	fmt.Println("consensus.ExecuteTxFlag =", consensus.ExecuteTxFlag)
 	fmt.Println("consensus.PreserveTxFlag =", consensus.PreserveTxFlag)
 	fmt.Println("consensus.VoteBatchFlag =", consensus.VoteBatchFlag)
@@ -177,8 +201,12 @@ func printAndCheckVars() {
 		fmt.Println("RunBenchmark ===> RemoteLinuxCluster")
 		pass = false
 	}
-	if SetupClusterTemplate && RunBenchmark {
-		fmt.Println("SetupClusterTemplate ===> !RunBenchmark")
+	if OnlySetupCluster && RunBenchmark {
+		fmt.Println("OnlySetupCluster ===> !RunBenchmark")
+		pass = false
+	}
+	if OnlyRunCluster && RunBenchmark {
+		fmt.Println("OnlyRunCluster ===> !RunBenchmark")
 		pass = false
 	}
 	if !consensus.ExecuteTxFlag && !RunBenchmark {
