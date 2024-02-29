@@ -13,14 +13,14 @@ import (
 type Store interface {
 	GetLeafCount() *big.Int
 	GetHeight() uint8
-	GetNode(p *Position) []byte
+	GetNode(p *Position) []byte //通过Position从持久化存储中获取数据
 }
 
 // MapStore is simple Store implementation
 type MapStore struct {
-	leafCount *big.Int
-	height    uint8
-	nodes     map[string][]byte
+	leafCount *big.Int          //叶子节点数量
+	height    uint8             //树的总高度
+	nodes     map[string][]byte //叶子节点和分叉节点Position到Data的映射
 	mtx       sync.RWMutex
 }
 

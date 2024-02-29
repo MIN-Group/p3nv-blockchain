@@ -12,8 +12,8 @@ import (
 
 type Config struct {
 	Hash            crypto.Hash
-	BranchFactor    uint8
-	ConcurrentLimit int
+	BranchFactor    uint8 //分叉因子
+	ConcurrentLimit int   //加载Node的并发协程数
 }
 
 // Tree implements a merkle tree engine
@@ -40,6 +40,7 @@ func NewTree(store Store, config Config) *Tree {
 
 // Root returns the root node of the tree
 func (tree *Tree) Root() *Node {
+	//根节点所在的层次是Height-1
 	p := NewPosition(tree.store.GetHeight()-1, big.NewInt(0))
 	if data := tree.store.GetNode(p); data != nil {
 		return &Node{p, data}
@@ -52,13 +53,14 @@ func (tree *Tree) Root() *Node {
 func (tree *Tree) Update(leaves []*Node, newLeafCount *big.Int) *UpdateResult {
 	res := &UpdateResult{
 		LeafCount: newLeafCount,
-		Height:    tree.calc.Height(newLeafCount),
+		Height:    tree.calc.Height(newLeafCount), //包括叶子节点和分叉节点的树的高度
 		Leaves:    leaves,
 		Branches:  make([]*Node, 0),
 	}
 	nodes := leaves
 	rowSize := newLeafCount
 
+	//自下而上层次遍历树添加分支节点
 	for i := uint8(0); i < res.Height-1; i++ {
 		nodes = tree.updateOneLevel(nodes, rowSize)
 		res.Branches = append(res.Branches, nodes...)
@@ -132,23 +134,30 @@ func (tree *Tree) Verify(leaves []*Node) bool {
 }
 
 func (tree *Tree) groupNodesByParent(nodes []*Node) (map[string]*Group, map[string][]*Node) {
-	ngmap := tree.getGroupPositions(nodes)
-	bpos := ngmap.UniqueMap()
-	groups := tree.makeGroups(bpos)
-	gnodes := make(map[string][]*Node, len(bpos))
+	ngmap := tree.getGroupPositions(nodes) //获取nodes对应父节点的positions
+	//将父节点的positions转化为map形式
+	bpos := make(map[string]*Position)
+	for _, p := range ngmap {
+		if _, found := bpos[p.String()]; !found {
+			bpos[p.String()] = p
+		}
+	}
+	groups := tree.makeGroups(bpos)               //建立父节点对应的空groups
+	gnodes := make(map[string][]*Node, len(bpos)) //父节点position ==> 节点列表
 	for key := range bpos {
 		gnodes[key] = make([]*Node, 0)
 	}
+	//遍历父节点的positions, 将对应的node[i]添加到gnodes中
 	for i, p := range ngmap {
 		gnodes[p.String()] = append(gnodes[p.String()], nodes[i])
 	}
 	return groups, gnodes
 }
 
-func (tree *Tree) getGroupPositions(nodes []*Node) Positions {
-	positions := make(Positions, len(nodes))
+func (tree *Tree) getGroupPositions(nodes []*Node) []*Position {
+	positions := make([]*Position, len(nodes))
 	for i, n := range nodes {
-		bIndex := tree.calc.GroupOfNode(n.Position.Index())
+		bIndex := tree.calc.GroupOfNode(n.Position.Index()) //获取节点在父层中的索引
 		positions[i] = NewPosition(n.Position.Level()+1, bIndex)
 	}
 	return positions
