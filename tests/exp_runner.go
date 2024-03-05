@@ -49,7 +49,7 @@ func (r *ExperimentRunner) Run() (pass, fail int) {
 		if err != nil {
 			fail++
 			fmt.Printf("%s %s\n", boldRed.Sprint("FAIL"), bold.Sprint(expm.Name()))
-			fmt.Printf("error: %+v\n", err)
+			fmt.Println(err)
 		} else {
 			pass++
 			fmt.Printf("%s %s\n", boldGrean.Sprint("PASS"), bold.Sprint(expm.Name()))

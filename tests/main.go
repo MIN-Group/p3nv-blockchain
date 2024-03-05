@@ -39,7 +39,7 @@ var (
 	BroadcastTx    = false
 
 	// run tests in remote linux cluster
-	RemoteLinuxCluster    = true // if false it'll use local cluster (running multiple nodes on single local machine)
+	RemoteLinuxCluster    = false // if false it'll use local cluster (running multiple nodes on single local machine)
 	RemoteSetupRequired   = true
 	RemoteInstallRequired = false // if false it will not try to install dstat on remote machine
 	RemoteRunRequired     = false // if false it will not run dstat on remote machine
@@ -51,8 +51,9 @@ var (
 	BenchDuration = max(5*time.Minute, time.Duration(NodeCount/2))
 	BenchLoads    = []int{10000}
 
+	OnlySetupDocker  = true
 	OnlySetupCluster = false
-	OnlyRunCluster   = true
+	OnlyRunCluster   = false
 )
 
 func getNodeConfig() node.Config {
@@ -98,6 +99,10 @@ func main() {
 			cfactory = makeLocalClusterFactory()
 		}
 
+		if OnlySetupDocker {
+			setupRapidDocker(cfactory)
+			return
+		}
 		if OnlySetupCluster {
 			setupRapidCluster(cfactory)
 			return
@@ -127,6 +132,19 @@ func runBenchmark() {
 		loadClient: makeLoadClient(),
 	}
 	bm.Run()
+}
+
+func setupRapidDocker(cfactory cluster.ClusterFactory) {
+	if cls, err := cfactory.SetupCluster("docker_template"); err == nil {
+		dockerCompose := cluster.NewDockerCompose(cls)
+		if err = cluster.WriteYamlFile(cfactory.TemplateDir(), dockerCompose); err == nil {
+			fmt.Printf("docker-compose -f %s up -d\n", path.Join(cfactory.TemplateDir(), "docker-compose.yaml"))
+		} else {
+			fmt.Println(err)
+		}
+	} else {
+		fmt.Println(err)
+	}
 }
 
 func setupRapidCluster(cfactory cluster.ClusterFactory) {
@@ -199,6 +217,14 @@ func printAndCheckVars() {
 	}
 	if RunBenchmark && !RemoteLinuxCluster {
 		fmt.Println("RunBenchmark ===> RemoteLinuxCluster")
+		pass = false
+	}
+	if OnlySetupDocker && RemoteLinuxCluster {
+		fmt.Println("OnlySetupDocker ===> !RemoteLinuxCluster")
+		pass = false
+	}
+	if OnlySetupDocker && RunBenchmark {
+		fmt.Println("OnlySetupDocker ===> !RunBenchmark")
 		pass = false
 	}
 	if OnlySetupCluster && RunBenchmark {
@@ -275,6 +301,7 @@ func makeLocalClusterFactory() *cluster.LocalFactory {
 		NodeCount:        NodeCount,
 		WorkerProportion: WorkerProportion,
 		VoterProportion:  VoterProportion,
+		SetupDocker:      OnlySetupDocker,
 		NodeConfig:       getNodeConfig(),
 	})
 	check(err)

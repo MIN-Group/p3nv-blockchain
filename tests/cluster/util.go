@@ -17,10 +17,57 @@ import (
 	"time"
 
 	"github.com/multiformats/go-multiaddr"
+	"gopkg.in/yaml.v3"
 
 	"github.com/wooyang2018/ppov-blockchain/core"
 	"github.com/wooyang2018/ppov-blockchain/node"
 )
+
+type DockerCompose struct {
+	Version  string             `yaml:"version"`
+	Services map[string]Service `yaml:"services"`
+}
+
+type Service struct {
+	Image   string   `yaml:"image"`
+	Volumes []string `yaml:"volumes"`
+	Ports   []string `yaml:"ports"`
+	Command string   `yaml:"command"`
+}
+
+func NewDockerCompose(cls *Cluster) DockerCompose {
+	dockerCompose := DockerCompose{
+		Version:  "3",
+		Services: make(map[string]Service),
+	}
+	for i := 0; i < cls.NodeCount(); i++ {
+		curNode := cls.GetNode(i)
+		service := Service{
+			Image:   "ubuntu:20.04",
+			Volumes: []string{fmt.Sprintf("../../../chain:%s", path.Join(curNode.NodeConfig().DataDir, "chain"))},
+			Ports:   []string{fmt.Sprintf("%d:%d", curNode.NodeConfig().APIPort+i, curNode.NodeConfig().APIPort)},
+			Command: curNode.PrintCmd(),
+		}
+		for _, v := range []string{node.GenesisFile, node.NodekeyFile, node.PeersFile} {
+			filepath := path.Join(curNode.NodeConfig().DataDir, v)
+			service.Volumes = append(service.Volumes, fmt.Sprintf("./%d/%s:%s", i, v, filepath))
+		}
+		name := fmt.Sprintf("node%d", i)
+		dockerCompose.Services[name] = service
+	}
+	return dockerCompose
+}
+
+func WriteYamlFile(clusterDir string, data DockerCompose) error {
+	file, err := os.Create(path.Join(clusterDir, "docker-compose.yaml"))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	encoder := yaml.NewEncoder(file)
+	encoder.SetIndent(2)
+	return encoder.Encode(data)
+}
 
 func WriteNodeKey(datadir string, key *core.PrivateKey) error {
 	f, err := os.Create(path.Join(datadir, node.NodekeyFile))

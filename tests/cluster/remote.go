@@ -61,8 +61,11 @@ func NewRemoteFactory(params RemoteFactoryParams) (*RemoteFactory, error) {
 			return nil, err
 		}
 	}
-	fmt.Println()
 	return ftry, nil
+}
+
+func (ftry *RemoteFactory) TemplateDir() string {
+	return ftry.templateDir
 }
 
 func (ftry *RemoteFactory) ReadHosts(hostsPath string, nodeCount int) error {
@@ -111,7 +114,6 @@ func (ftry *RemoteFactory) setup() error {
 	if err := SetupTemplateDir(ftry.templateDir, keys, peers, ftry.params.WorkerProportion, ftry.params.VoterProportion); err != nil {
 		return err
 	}
-	fmt.Println()
 	if err := ftry.setupRemoteServers(); err != nil {
 		return err
 	}
@@ -391,4 +393,8 @@ func (node *RemoteNode) PrintCmd() string {
 	cmd := exec.Command(node.binPath)
 	AddPPoVFlags(cmd, &node.config)
 	return cmd.String()
+}
+
+func (node *RemoteNode) NodeConfig() node.Config {
+	return node.config
 }

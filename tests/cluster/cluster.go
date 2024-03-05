@@ -19,10 +19,12 @@ type Node interface {
 	IsRunning() bool
 	GetEndpoint() string
 	PrintCmd() string
+	NodeConfig() node.Config
 }
 
 type ClusterFactory interface {
 	SetupCluster(name string) (*Cluster, error)
+	TemplateDir() string
 }
 
 type Cluster struct {

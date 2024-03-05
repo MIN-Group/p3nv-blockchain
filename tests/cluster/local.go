@@ -25,6 +25,7 @@ type LocalFactoryParams struct {
 	NodeCount        int
 	WorkerProportion float32
 	VoterProportion  float32
+	SetupDocker      bool
 
 	NodeConfig node.Config
 }
@@ -47,9 +48,19 @@ func NewLocalFactory(params LocalFactoryParams) (*LocalFactory, error) {
 	return ftry, nil
 }
 
-func (ftry *LocalFactory) setup() error {
-	ftry.templateDir = path.Join(ftry.params.WorkDir, "cluster_template")
-	addrs, err := ftry.makeAddrs()
+func (ftry *LocalFactory) TemplateDir() string {
+	return ftry.templateDir
+}
+
+func (ftry *LocalFactory) setup() (err error) {
+	var addrs []multiaddr.Multiaddr
+	if ftry.params.SetupDocker {
+		ftry.templateDir = path.Join(ftry.params.WorkDir, "docker_template")
+		addrs, err = ftry.makeDockerAddrs()
+	} else {
+		ftry.templateDir = path.Join(ftry.params.WorkDir, "cluster_template")
+		addrs, err = ftry.makeLocalAddrs()
+	}
 	if err != nil {
 		return err
 	}
@@ -58,7 +69,20 @@ func (ftry *LocalFactory) setup() error {
 	return SetupTemplateDir(ftry.templateDir, keys, peers, ftry.params.WorkerProportion, ftry.params.VoterProportion)
 }
 
-func (ftry *LocalFactory) makeAddrs() ([]multiaddr.Multiaddr, error) {
+func (ftry *LocalFactory) makeDockerAddrs() ([]multiaddr.Multiaddr, error) {
+	addrs := make([]multiaddr.Multiaddr, ftry.params.NodeCount)
+	for i := range addrs {
+		addr, err := multiaddr.NewMultiaddr(
+			fmt.Sprintf("/dns4/node%d/tcp/%d", i, ftry.params.NodeConfig.Port))
+		if err != nil {
+			return nil, err
+		}
+		addrs[i] = addr
+	}
+	return addrs, nil
+}
+
+func (ftry *LocalFactory) makeLocalAddrs() ([]multiaddr.Multiaddr, error) {
 	addrs := make([]multiaddr.Multiaddr, ftry.params.NodeCount)
 	for i := range addrs {
 		addr, err := multiaddr.NewMultiaddr(
@@ -92,12 +116,18 @@ func (ftry *LocalFactory) SetupCluster(name string) (*Cluster, error) {
 			binPath: ftry.params.BinPath,
 			config:  ftry.params.NodeConfig,
 		}
-		node.config.DataDir = path.Join(clusterDir, strconv.Itoa(i))
+		if ftry.params.SetupDocker {
+			node.config.DataDir = "/app"
+			node.binPath = path.Join(node.config.DataDir, "chain")
+		} else {
+			node.config.Port = node.config.Port + i
+			node.config.APIPort = node.config.APIPort + i
+			node.config.DataDir = path.Join(clusterDir, strconv.Itoa(i))
+		}
 		node.config.ConsensusConfig.BenchmarkPath = path.Join(node.config.DataDir, "consensus.csv")
-		node.config.Port = node.config.Port + i
-		node.config.APIPort = node.config.APIPort + i
 		nodes[i] = node
 	}
+
 	return &Cluster{
 		nodes:      nodes,
 		nodeConfig: ftry.params.NodeConfig,
@@ -179,4 +209,8 @@ func (node *LocalNode) PrintCmd() string {
 	cmd := exec.Command(node.binPath)
 	AddPPoVFlags(cmd, &node.config)
 	return cmd.String()
+}
+
+func (node *LocalNode) NodeConfig() node.Config {
+	return node.config
 }
