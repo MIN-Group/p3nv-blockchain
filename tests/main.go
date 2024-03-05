@@ -23,16 +23,16 @@ import (
 
 var (
 	WorkDir                  = "./workdir"
-	NodeCount                = 4
+	NodeCount                = 8
 	WorkerProportion float32 = 1
 	VoterProportion  float32 = 1
 
-	LoadTxPerSec    = 10
-	LoadJobPerTick  = 1000
+	LoadTxPerSec    = 10   // tps for client to submit tx during functional testing
+	LoadJobPerTick  = 1000 // num of tasks to be completed per tick
 	LoadSubmitNodes = []int{}
-	LoadBatchSubmit = true //whether to enable batch transaction submission
+	LoadBatchSubmit = true // whether to enable batch transaction submission
 
-	//chaincode priority: empty > ppovcoin bincc > ppovcoin
+	// chaincode priority: empty > ppovcoin bincc > ppovcoin
 	EmptyChainCode = true  // deploy empty chaincode instead of ppovcoin
 	PPoVCoinBinCC  = false // deploy ppovcoin chaincode as bincc type (not embeded in ppov node)
 	CheckRotation  = true
