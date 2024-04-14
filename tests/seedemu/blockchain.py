@@ -8,7 +8,7 @@ ReplaceFileTemplate = """\
 #!/bin/bash
 i=0
 while read -r replacement || [[ -n "$replacement" ]]; do 
-    sed -E -i "s/dns4\/{}$i/ip4\/$replacement/g" {}
+    sed -E -i "s/dns4\/{}$i\//ip4\/$replacement\//g" {}
     ((i++))
 done < {}
 """
@@ -66,7 +66,7 @@ class PPoV(Layer):
                 templateDir = os.path.join('../../../workdir/local-clusters/docker_template/', str(vnode))
                 self._log('rendering as{}/{} as {}{}...'.format(node.getAsn(), node.getName(), self.nodePrefix, vnode))
 
-                node.importFile('../../../chain', chainPath)
+                # node.importFile('../../../chain', chainPath)
                 node.importFile(os.path.join(templateDir, 'genesis.json'), os.path.join(self.dataDir, 'genesis.json'))
                 node.importFile(os.path.join(templateDir, 'nodekey'), os.path.join(self.dataDir, 'nodekey'))
                 node.importFile(os.path.join(templateDir, 'peers.json'), peersPath)
