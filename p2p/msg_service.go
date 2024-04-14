@@ -34,6 +34,8 @@ const (
 	MsgTypeResponse
 )
 
+type Topic string
+
 type msgReceiver func(peer *Peer, data []byte)
 
 type MsgService struct {
@@ -300,7 +302,7 @@ func (svc *MsgService) onReceiveRequest(peer *Peer, data []byte) {
 	resp.Seq = req.Seq
 
 	if hdlr, found := svc.reqHandlers[req.Type]; found {
-		data, err := hdlr.HandleReq(peer.PublicKey(), req.Data)
+		data, err := hdlr.HandleReq(req.Data)
 		if err != nil {
 			resp.Error = err.Error()
 		} else {

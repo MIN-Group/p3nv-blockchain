@@ -108,7 +108,7 @@ func (m *MockListener) CB(e emitter.Event) {
 
 func TestPeer_ReadWrite(t *testing.T) {
 	assert := assert.New(t)
-	p := NewPeer(nil, nil)
+	p := NewPeer(nil, nil, nil)
 
 	rwc := newRWCLoopBack()
 	p.onConnected(rwc)
@@ -134,7 +134,7 @@ func TestPeer_ReadWrite(t *testing.T) {
 
 func TestPeer_ConnStatus(t *testing.T) {
 	assert := assert.New(t)
-	p := NewPeer(nil, nil)
+	p := NewPeer(nil, nil, nil)
 
 	assert.Equal(PeerStatusDisconnected, p.Status())
 
@@ -148,7 +148,7 @@ func TestPeer_ConnStatus(t *testing.T) {
 
 	assert.Equal(PeerStatusDisconnected, p.Status())
 
-	p = NewPeer(nil, nil)
+	p = NewPeer(nil, nil, nil)
 	err := p.setConnecting()
 
 	assert.NoError(err)

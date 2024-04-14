@@ -17,14 +17,15 @@ import (
 )
 
 type Peer struct {
-	PubKey []byte
-	Addr   string
+	PubKey    []byte
+	PointAddr string
+	TopicAddr string
 }
 
 type Genesis struct {
-	Workers []string //记账节点列表
-	Weights []int    //记账节点权重列表
-	Voters  []string //投票节点列表
+	Workers []string // 记账节点列表
+	Weights []int    // 记账节点权重列表
+	Voters  []string // 投票节点列表
 }
 
 const (
@@ -78,11 +79,12 @@ func readPeers(datadir string) ([]*p2p.Peer, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid public key %w", err)
 		}
-		addr, err := multiaddr.NewMultiaddr(r.Addr)
+		pointAddr, err := multiaddr.NewMultiaddr(r.PointAddr)
+		topicAddr, err := multiaddr.NewMultiaddr(r.TopicAddr)
 		if err != nil {
 			return nil, fmt.Errorf("invalid multiaddr %w", err)
 		}
-		peers[i] = p2p.NewPeer(pubKey, addr)
+		peers[i] = p2p.NewPeer(pubKey, pointAddr, topicAddr)
 	}
 	return peers, nil
 }

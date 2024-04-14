@@ -13,13 +13,14 @@ import (
 )
 
 const (
-	FlagDebug   = "debug"
-	FlagDataDir = "dataDir"
+	FlagDebug       = "debug"
+	FlagDataDir     = "dataDir"
+	FlagBroadcastTx = "broadcastTx"
+	FlagChainID     = "chainID"
 
-	FlagPort    = "port"
-	FlagAPIPort = "apiPort"
-
-	FlagBroadcastTx = "broadcast-tx"
+	FlagPointPort = "pointPort"
+	FlagTopicPort = "topicPort"
+	FlagAPIPort   = "apiPort"
 
 	// storage
 	FlagMerkleBranchFactor = "storage-merkleBranchFactor"
@@ -29,7 +30,6 @@ const (
 	FlagExecConcurrentLimit = "execution-concurrentLimit"
 
 	// consensus
-	FlagChainID         = "chainID"
 	FlagBatchTxLimit    = "consensus-batchTxLimit"
 	FlagBlockBatchLimit = "consensus-blockBatchLimit"
 	FlagVoteBatchLimit  = "consensus-voteBatchLimit"
@@ -68,11 +68,14 @@ func init() {
 		FlagDataDir, "d", "", "blockchain data directory")
 	rootCmd.MarkPersistentFlagRequired(FlagDataDir)
 
-	rootCmd.Flags().IntVarP(&nodeConfig.Port,
-		FlagPort, "p", nodeConfig.Port, "p2p port")
+	rootCmd.Flags().IntVar(&nodeConfig.PointPort,
+		FlagPointPort, nodeConfig.PointPort, "node point port")
+
+	rootCmd.Flags().IntVar(&nodeConfig.TopicPort,
+		FlagTopicPort, nodeConfig.TopicPort, "node topic port")
 
 	rootCmd.Flags().IntVarP(&nodeConfig.APIPort,
-		FlagAPIPort, "P", nodeConfig.APIPort, "node api port")
+		FlagAPIPort, "p", nodeConfig.APIPort, "node api port")
 
 	rootCmd.Flags().BoolVar(&nodeConfig.BroadcastTx,
 		FlagBroadcastTx, false, "whether to broadcast transaction")

@@ -105,12 +105,12 @@ func (ftry *RemoteFactory) GetParams() RemoteFactoryParams {
 }
 
 func (ftry *RemoteFactory) setup() error {
-	addrs, err := ftry.makeAddrs()
+	pointAddrs, topicAddrs, err := ftry.makeAddrs()
 	if err != nil {
 		return err
 	}
 	keys := MakeRandomKeys(ftry.params.NodeCount)
-	peers := MakePeers(keys, addrs)
+	peers := MakePeers(keys, pointAddrs, topicAddrs)
 	if err := SetupTemplateDir(ftry.templateDir, keys, peers, ftry.params.WorkerProportion, ftry.params.VoterProportion); err != nil {
 		return err
 	}
@@ -123,18 +123,22 @@ func (ftry *RemoteFactory) setup() error {
 	return ftry.sendTemplate()
 }
 
-func (ftry *RemoteFactory) makeAddrs() ([]multiaddr.Multiaddr, error) {
-	addrs := make([]multiaddr.Multiaddr, ftry.params.NodeCount)
-	// create validator infos (pubkey + addr)
-	for i := range addrs {
-		addr, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%d",
-			ftry.hosts[i], ftry.params.NodeConfig.Port+i))
+func (ftry *RemoteFactory) makeAddrs() ([]multiaddr.Multiaddr, []multiaddr.Multiaddr, error) {
+	n := ftry.params.NodeCount
+	pointAddrs, topicAddrs := make([]multiaddr.Multiaddr, n), make([]multiaddr.Multiaddr, n)
+	// create validator infos (pubkey + pointAddr + topicAddr)
+	for i := 0; i < n; i++ {
+		pointAddr, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%d",
+			ftry.hosts[i], ftry.params.NodeConfig.PointPort+i))
+		topicAddr, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%d",
+			ftry.hosts[i], ftry.params.NodeConfig.TopicPort+i))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		addrs[i] = addr
+		pointAddrs[i] = pointAddr
+		topicAddrs[i] = topicAddr
 	}
-	return addrs, nil
+	return pointAddrs, topicAddrs, nil
 }
 
 func (ftry *RemoteFactory) setupRemoteServers() error {
@@ -227,7 +231,8 @@ func (ftry *RemoteFactory) SetupCluster(name string) (*Cluster, error) {
 		}
 		node.config.DataDir = path.Join(ftry.workDirs[i], name)
 		node.config.ConsensusConfig.BenchmarkPath = path.Join(node.config.DataDir, "consensus.csv")
-		node.config.Port = node.config.Port + i
+		node.config.PointPort = node.config.PointPort + i
+		node.config.TopicPort = node.config.TopicPort + i
 		node.config.APIPort = node.config.APIPort + i
 		node.RemoveEffect()
 		node.StopDstat()

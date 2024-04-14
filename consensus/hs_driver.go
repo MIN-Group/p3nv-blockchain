@@ -21,7 +21,7 @@ type hsDriver struct {
 	leaderState *leaderState
 	voterState  *voterState
 
-	checkTxDelay time.Duration //检测TxPool交易数量的延迟
+	checkTxDelay time.Duration // 检测TxPool交易数量的延迟
 }
 
 // 验证hsDriver实现了hotstuff的Driver
@@ -39,7 +39,6 @@ func (hsd *hsDriver) CreateLeaf(parent hotstuff.Block, qc hotstuff.QC, height ui
 		headers = hsd.voterState.popBatchHeaders()
 	}
 	txs := hsd.extractBatchTxs(headers)
-	//core.Block的链式调用
 	blk := core.NewBlock().
 		SetParentHash(parent.(*hsBlock).block.Hash()).
 		SetQuorumCert(qc.(*hsQC).qc).
@@ -76,12 +75,12 @@ func (hsd *hsDriver) extractBatchTxs(headers []*core.BatchHeader) [][]byte {
 	for _, batch := range headers {
 		for _, hash := range batch.Transactions() {
 			if _, ok := txSet[string(hash)]; ok {
-				continue //重复交易则跳过
+				continue // 重复交易则跳过
 			}
 			if hsd.resources.Storage.HasTx(hash) {
-				continue //已提交交易则跳过
+				continue // 已提交交易则跳过
 			}
-			txSet[string(hash)] = struct{}{} //集合去重
+			txSet[string(hash)] = struct{}{} // 集合去重
 			txs = append(txs, hash)
 		}
 	}

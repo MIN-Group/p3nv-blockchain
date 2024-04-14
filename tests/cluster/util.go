@@ -110,13 +110,15 @@ func MakeRandomKeys(count int) []*core.PrivateKey {
 	return keys
 }
 
-func MakePeers(keys []*core.PrivateKey, addrs []multiaddr.Multiaddr) []node.Peer {
-	vlds := make([]node.Peer, len(addrs))
-	// create validator infos (pubkey + addr)
-	for i, addr := range addrs {
+func MakePeers(keys []*core.PrivateKey, pointAddrs, topicAddrs []multiaddr.Multiaddr) []node.Peer {
+	n := len(pointAddrs)
+	vlds := make([]node.Peer, n)
+	// create validator infos (pubkey + pointAddr + topicAddr)
+	for i := 0; i < n; i++ {
 		vlds[i] = node.Peer{
-			PubKey: keys[i].PublicKey().Bytes(),
-			Addr:   addr.String(),
+			PubKey:    keys[i].PublicKey().Bytes(),
+			PointAddr: pointAddrs[i].String(),
+			TopicAddr: topicAddrs[i].String(),
 		}
 	}
 	return vlds
@@ -186,13 +188,16 @@ func RunCommand(cmd *exec.Cmd) error {
 
 func AddPPoVFlags(cmd *exec.Cmd, config *node.Config) {
 	cmd.Args = append(cmd.Args, "-d", config.DataDir)
-	cmd.Args = append(cmd.Args, "-p", strconv.Itoa(config.Port))
-	cmd.Args = append(cmd.Args, "-P", strconv.Itoa(config.APIPort))
+	cmd.Args = append(cmd.Args, "-p", strconv.Itoa(config.APIPort))
+	cmd.Args = append(cmd.Args, "--pointPort", strconv.Itoa(config.PointPort))
+	cmd.Args = append(cmd.Args, "--topicPort", strconv.Itoa(config.TopicPort))
+	cmd.Args = append(cmd.Args, "--chainID",
+		strconv.Itoa(int(config.ConsensusConfig.ChainID)))
 	if config.Debug {
 		cmd.Args = append(cmd.Args, "--debug")
 	}
 	if config.BroadcastTx {
-		cmd.Args = append(cmd.Args, "--broadcast-tx")
+		cmd.Args = append(cmd.Args, "--broadcastTx")
 	}
 
 	cmd.Args = append(cmd.Args, "--storage-merkleBranchFactor",
@@ -204,9 +209,6 @@ func AddPPoVFlags(cmd *exec.Cmd, config *node.Config) {
 
 	cmd.Args = append(cmd.Args, "--execution-concurrentLimit",
 		strconv.Itoa(config.ExecutionConfig.ConcurrentLimit))
-
-	cmd.Args = append(cmd.Args, "--chainID",
-		strconv.Itoa(int(config.ConsensusConfig.ChainID)))
 
 	cmd.Args = append(cmd.Args, "--consensus-batchTxLimit",
 		strconv.Itoa(config.ConsensusConfig.BatchTxLimit))

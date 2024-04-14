@@ -20,12 +20,12 @@ func TestPeerStore(t *testing.T) {
 
 	// load or store
 	pubKey, _ := core.NewPublicKey(bytes.Repeat([]byte{1}, ed25519.PublicKeySize))
-	p := NewPeer(pubKey, nil)
+	p := NewPeer(pubKey, nil, nil)
 	actual, loaded := s.LoadOrStore(p)
 	assert.False(loaded)
 	assert.Equal(p, actual)
 
-	p1 := NewPeer(pubKey, nil)
+	p1 := NewPeer(pubKey, nil, nil)
 
 	actual, loaded = s.LoadOrStore(p1)
 	assert.True(loaded)
