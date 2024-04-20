@@ -51,7 +51,7 @@ var (
 	BenchDuration = max(5*time.Minute, time.Duration(NodeCount/2))
 	BenchLoads    = []int{10000}
 
-	OnlySetupDocker  = true
+	OnlySetupDocker  = false
 	OnlySetupCluster = false
 	OnlyRunCluster   = false
 )
@@ -195,7 +195,6 @@ func printAndCheckVars() {
 	fmt.Println("RemoteLinuxCluster =", RemoteLinuxCluster)
 	fmt.Println("RunBenchmark =", RunBenchmark)
 	fmt.Println("BenchLoads =", BenchLoads)
-	fmt.Println("OnlySetupCluster =", OnlySetupCluster)
 	fmt.Println("consensus.ExecuteTxFlag =", consensus.ExecuteTxFlag)
 	fmt.Println("consensus.PreserveTxFlag =", consensus.PreserveTxFlag)
 	fmt.Println("consensus.VoteBatchFlag =", consensus.VoteBatchFlag)

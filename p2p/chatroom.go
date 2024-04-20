@@ -2,14 +2,15 @@ package p2p
 
 import (
 	"context"
+	"time"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
-	"github.com/wooyang2018/ppov-blockchain/logger"
 
 	"github.com/wooyang2018/ppov-blockchain/emitter"
+	"github.com/wooyang2018/ppov-blockchain/logger"
 )
 
 var topicName = "blockchain"
@@ -53,6 +54,7 @@ func JoinChatRoom(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID) (*Chat
 
 	// start reading messages from the subscription in a loop
 	go cr.readLoop()
+	go cr.printLoop()
 	return cr, nil
 }
 
@@ -77,6 +79,12 @@ func (cr *ChatRoom) readLoop() {
 			continue
 		}
 		cr.emitter.Emit(msg)
+	}
+}
+
+func (cr *ChatRoom) printLoop() {
+	for range time.Tick(20 * time.Second) {
+		logger.I().Infof("chatroom has %d connections", len(cr.ListPeers()))
 	}
 }
 
