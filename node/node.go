@@ -142,13 +142,17 @@ func (node *Node) setupHost() {
 	if err != nil {
 		logger.I().Fatalw("cannot create p2p host", "error", err)
 	}
-	for _, p := range node.peers {
+	for i, p := range node.peers {
 		if !p.PublicKey().Equal(node.privKey.PublicKey()) {
 			host.AddPeer(p)
-			host.ConnectPeer(p)
+			if i == 0 {
+				host.ConnectPeer(p)
+			}
 		}
 	}
-	host.JoinChatRoom()
+	if err = host.JoinChatRoom(); err != nil {
+		logger.I().Errorw("failed to join chatroom", "error", err)
+	}
 	node.host = host
 }
 

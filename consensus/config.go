@@ -8,7 +8,7 @@ import "time"
 
 const ExecuteTxFlag = true   //set to false when benchmark test
 const PreserveTxFlag = false //set to true when benchmark test
-const VoteBatchFlag = true   //set to false to prevent voting on batch
+const VoteBatchFlag = false  //set to false to prevent voting on batch
 
 type Config struct {
 	ChainID int64
@@ -53,9 +53,9 @@ var DefaultConfig = Config{
 	VoteBatchLimit:  -1, // set to -1 to adapt to the number of worker nodes
 	TxWaitTime:      1 * time.Second,
 	BatchWaitTime:   3 * time.Second,
-	ProposeTimeout:  1500 * time.Millisecond,
-	BatchTimeout:    1500 * time.Millisecond,
-	BlockDelay:      500 * time.Millisecond,
+	ProposeTimeout:  3 * time.Second,
+	BatchTimeout:    3 * time.Second,
+	BlockDelay:      1 * time.Second,
 	ViewWidth:       60 * time.Second,
 	LeaderTimeout:   20 * time.Second,
 	BenchmarkPath:   "",

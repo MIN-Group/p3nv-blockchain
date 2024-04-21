@@ -104,7 +104,7 @@ func (host *Host) JoinChatRoom() error {
 	if err := setupDiscovery(host.topicHost, host.peerStore); err != nil {
 		return err
 	}
-	// join the chat room
+	// join the chatroom
 	if host.chatRoom, err = JoinChatRoom(ctx, ps, host.topicHost.ID()); err != nil {
 		return err
 	}

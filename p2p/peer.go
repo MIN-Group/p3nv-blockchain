@@ -199,7 +199,7 @@ func (p *Peer) getRWC() io.ReadWriteCloser {
 func (p *Peer) resetReconnectInterval() {
 	p.mtxRecon.Lock()
 	defer p.mtxRecon.Unlock()
-	p.reconnectInterval = 300 * time.Millisecond
+	p.reconnectInterval = 1 * time.Second
 }
 
 func (p *Peer) increaseReconnectInterval() time.Duration {
@@ -207,7 +207,7 @@ func (p *Peer) increaseReconnectInterval() time.Duration {
 	defer p.mtxRecon.Unlock()
 
 	p.reconnectInterval *= 2
-	maxInterval := 10 * time.Second
+	maxInterval := 32 * time.Second
 	if p.reconnectInterval > maxInterval {
 		p.reconnectInterval = maxInterval
 	}

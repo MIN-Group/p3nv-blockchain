@@ -98,7 +98,7 @@ func (gns *genesis) broadcastProposalLoop() {
 				logger.I().Errorw("broadcast proposal failed", "error", err)
 			}
 		}
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 }
 
