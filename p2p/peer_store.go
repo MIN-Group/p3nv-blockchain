@@ -88,10 +88,10 @@ func (s *PeerStore) IsValidID(id peer.ID) bool {
 	return ok
 }
 
-func (s *PeerStore) GetPeerDist(src string) map[peer.ID]int {
-	res := make(map[peer.ID]int)
+func (s *PeerStore) GetPeerDist(src string) map[peer.ID]float64 {
+	res := make(map[peer.ID]float64)
 	for id, name := range s.id2name {
-		res[id] = hammingWeight(src, name)
+		res[id] = float64(hammingWeight(src, name))
 	}
 	return res
 }

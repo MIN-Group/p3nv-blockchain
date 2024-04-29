@@ -120,10 +120,6 @@ func init() {
 		FlagProposeTimeout, nodeConfig.ConsensusConfig.ProposeTimeout,
 		"duration to wait to propose next block if leader cannot create qc")
 
-	rootCmd.Flags().DurationVar(&nodeConfig.ConsensusConfig.BatchTimeout,
-		FlagBatchTimeout, nodeConfig.ConsensusConfig.BatchTimeout,
-		"duration to wait to propose next batch if leader cannot create qc")
-
 	rootCmd.Flags().DurationVar(&nodeConfig.ConsensusConfig.BlockDelay,
 		FlagBlockDelay, nodeConfig.ConsensusConfig.BlockDelay,
 		"minimum delay between blocks")

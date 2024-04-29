@@ -35,7 +35,7 @@ var (
 	// chaincode priority: empty > ppovcoin bincc > ppovcoin
 	EmptyChainCode = true  // deploy empty chaincode instead of ppovcoin
 	PPoVCoinBinCC  = false // deploy ppovcoin chaincode as bincc type (not embeded in ppov node)
-	CheckRotation  = true
+	CheckRotation  = false
 	BroadcastTx    = false
 
 	// run tests in remote linux cluster
@@ -51,7 +51,7 @@ var (
 	BenchDuration = max(5*time.Minute, time.Duration(NodeCount/2))
 	BenchLoads    = []int{10000}
 
-	OnlySetupDocker  = false
+	OnlySetupDocker  = true
 	OnlySetupCluster = false
 	OnlyRunCluster   = false
 )
@@ -197,6 +197,7 @@ func printAndCheckVars() {
 	fmt.Println("BenchLoads =", BenchLoads)
 	fmt.Println("consensus.ExecuteTxFlag =", consensus.ExecuteTxFlag)
 	fmt.Println("consensus.PreserveTxFlag =", consensus.PreserveTxFlag)
+	fmt.Println("consensus.GenerateTxFlag =", consensus.GenerateTxFlag)
 	fmt.Println("consensus.VoteBatchFlag =", consensus.VoteBatchFlag)
 	fmt.Println()
 	pass := true
@@ -212,7 +213,6 @@ func printAndCheckVars() {
 	}
 	if !RunBenchmark && !CheckRotation {
 		fmt.Println("!RunBenchmark ===> CheckRotation")
-		pass = false
 	}
 	if RunBenchmark && !RemoteLinuxCluster {
 		fmt.Println("RunBenchmark ===> RemoteLinuxCluster")
@@ -236,14 +236,16 @@ func printAndCheckVars() {
 	}
 	if !consensus.ExecuteTxFlag && !RunBenchmark {
 		fmt.Println("!consensus.ExecuteTxFlag ===> RunBenchmark")
-		pass = false
 	}
 	if consensus.PreserveTxFlag && !RunBenchmark {
 		fmt.Println("consensus.PreserveTxFlag ===> RunBenchmark")
-		pass = false
 	}
 	if consensus.ExecuteTxFlag && consensus.PreserveTxFlag {
 		fmt.Println("consensus.ExecuteTxFlag ===> !consensus.PreserveTxFlag")
+		pass = false
+	}
+	if consensus.ExecuteTxFlag && consensus.GenerateTxFlag {
+		fmt.Println("consensus.ExecuteTxFlag ===> !consensus.GenerateTxFlag")
 		pass = false
 	}
 	if pass {

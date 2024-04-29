@@ -229,9 +229,6 @@ func AddPPoVFlags(cmd *exec.Cmd, config *node.Config) {
 	cmd.Args = append(cmd.Args, "--consensus-proposeTimeout",
 		config.ConsensusConfig.ProposeTimeout.String())
 
-	cmd.Args = append(cmd.Args, "--consensus-batchTimeout",
-		config.ConsensusConfig.BatchTimeout.String())
-
 	cmd.Args = append(cmd.Args, "--consensus-blockDelay",
 		config.ConsensusConfig.BlockDelay.String())
 

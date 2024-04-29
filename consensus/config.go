@@ -6,9 +6,10 @@ package consensus
 
 import "time"
 
-const ExecuteTxFlag = true   //set to false when benchmark test
-const PreserveTxFlag = false //set to true when benchmark test
-const VoteBatchFlag = false  //set to false to prevent voting on batch
+const ExecuteTxFlag = false // set to false when benchmark test
+const PreserveTxFlag = true // set to true when benchmark test
+const GenerateTxFlag = true
+const VoteBatchFlag = false // set to false to prevent voting on batch
 
 type Config struct {
 	ChainID int64
@@ -19,7 +20,7 @@ type Config struct {
 	// maximum batch count in a block
 	BlockBatchLimit int
 
-	//batch count in a batch vote
+	// batch count in a batch vote
 	VoteBatchLimit int
 
 	// block creation delay if no transactions in the pool
@@ -30,9 +31,6 @@ type Config struct {
 
 	// duration to wait to propose next block if leader cannot create qc
 	ProposeTimeout time.Duration
-
-	// duration to wait to propose next batch if leader cannot create qc
-	BatchTimeout time.Duration
 
 	// minimum delay between each block (i.e, it can define maximum block rate)
 	BlockDelay time.Duration
@@ -48,13 +46,12 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	BatchTxLimit:    5000,
+	BatchTxLimit:    2000,
 	BlockBatchLimit: -1, // set to -1 to adapt to the number of worker nodes
 	VoteBatchLimit:  -1, // set to -1 to adapt to the number of worker nodes
 	TxWaitTime:      1 * time.Second,
 	BatchWaitTime:   3 * time.Second,
-	ProposeTimeout:  3 * time.Second,
-	BatchTimeout:    3 * time.Second,
+	ProposeTimeout:  5 * time.Second,
 	BlockDelay:      1 * time.Second,
 	ViewWidth:       60 * time.Second,
 	LeaderTimeout:   20 * time.Second,

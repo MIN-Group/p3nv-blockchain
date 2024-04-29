@@ -54,16 +54,12 @@ func (pm *pacemaker) batchRun() {
 
 	for {
 		pm.newBatch()
-		batchT := pm.nextBatchTimeout()
 
 		select {
 		case <-pm.stopCh:
 			return
-
-		case <-batchT.C:
 		case <-subQC.Events():
 		}
-		batchT.Stop()
 	}
 }
 
@@ -116,11 +112,6 @@ func (pm *pacemaker) nextProposeTimeout() *time.Timer {
 	return time.NewTimer(proposeWait)
 }
 
-func (pm *pacemaker) nextBatchTimeout() *time.Timer {
-	batchWait := pm.config.BatchTimeout
-	return time.NewTimer(batchWait)
-}
-
 func (pm *pacemaker) newBlock() {
 	pm.state.mtxUpdate.Lock()
 	defer pm.state.mtxUpdate.Unlock()
@@ -163,7 +154,7 @@ func (pm *pacemaker) newBatch() {
 	} else {
 		txs = pm.resources.TxPool.PopTxsFromQueue(pm.config.BatchTxLimit)
 	}
-	if len(txs) == 0 { //忽略打包空Batch
+	if len(txs) == 0 { // 忽略打包空Batch
 		return
 	}
 

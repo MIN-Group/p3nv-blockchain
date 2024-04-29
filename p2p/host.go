@@ -99,7 +99,7 @@ func (host *Host) handleStream(s network.Stream) {
 func (host *Host) JoinChatRoom() error {
 	ctx := context.Background()
 	// create a new PubSub service using the GossipSub router
-	ps, err := pubsub.NewGossipSub(ctx, host.topicHost)
+	ps, err := pubsub.NewGossipSub(ctx, host.topicHost, host.peerStore.GetPeerDist(host.name), 0.5)
 	if err != nil {
 		return err
 	}

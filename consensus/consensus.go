@@ -5,10 +5,14 @@
 package consensus
 
 import (
+	"math"
+	"math/rand"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/wooyang2018/ppov-blockchain/core"
+	"github.com/wooyang2018/ppov-blockchain/execution"
 	"github.com/wooyang2018/ppov-blockchain/hotstuff"
 	"github.com/wooyang2018/ppov-blockchain/logger"
 )
@@ -71,6 +75,7 @@ func (cons *Consensus) start() {
 	cons.setupPPovState()
 	cons.setupHsDriver()
 	cons.setupHotstuff(b0, q0)
+	cons.mockTxsForDocker(cons.config.BatchTxLimit)
 	cons.setupValidator()
 	cons.setupPacemaker()
 	cons.setupRotator()
@@ -152,6 +157,44 @@ func (cons *Consensus) setupPPovState() {
 		cons.config.BlockBatchLimit = min(cons.resources.VldStore.WorkerCount()/2, 8)
 	}
 	cons.leaderState.setBlockBatchLimit(cons.config.BlockBatchLimit)
+}
+
+func (cons *Consensus) mockTxsForDocker(num int) {
+	if !GenerateTxFlag {
+		return
+	}
+	jobCh := make(chan struct{}, num)
+	defer close(jobCh)
+	out := make(chan *core.Transaction, num)
+	defer close(out)
+	for i := 0; i < 10; i++ {
+		go func(jobCh <-chan struct{}, out chan<- *core.Transaction) {
+			for range jobCh {
+				out <- makeEmptyTx(cons.resources.Signer)
+			}
+		}(jobCh, out)
+	}
+	for i := 0; i < num; i++ {
+		jobCh <- struct{}{}
+	}
+	txs := make([]*core.Transaction, num)
+	for i := 0; i < num; i++ {
+		txs[i] = <-out
+	}
+	txList := core.TxList(txs)
+	err := cons.resources.TxPool.StoreTxs(&txList)
+	if err != nil {
+		logger.I().Errorf("store txs failed %+v", err)
+	}
+}
+
+func makeEmptyTx(signer core.Signer) *core.Transaction {
+	codeAddr := execution.NativeCodeIDEmpty
+	return core.NewTransaction().
+		SetCodeAddr(codeAddr).
+		SetNonce(time.Now().UnixNano()).
+		SetInput([]byte(strconv.Itoa(rand.Intn(math.MaxInt)))).
+		Sign(signer)
 }
 
 func (cons *Consensus) setupValidator() {

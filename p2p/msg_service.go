@@ -50,8 +50,7 @@ type MsgService struct {
 	newViewEmitter   *emitter.Emitter
 	txListEmitter    *emitter.Emitter
 
-	reqHandlers map[pb.Request_Type]ReqHandler
-
+	reqHandlers  map[pb.Request_Type]ReqHandler
 	reqClientSeq uint32
 }
 
@@ -246,7 +245,7 @@ func (svc *MsgService) listenPeer(peer *Peer) {
 		if receiver, found := svc.pointReceivers[MsgType(msg[0])]; found {
 			receiver(peer, msg[1:])
 		} else {
-			logger.I().Error("received invalid point message")
+			logger.I().Errorw("received invalid message", "type", msg[0])
 		}
 	}
 }

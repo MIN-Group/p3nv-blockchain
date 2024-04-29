@@ -50,8 +50,7 @@ func New(stateStore StateStore, config Config) *Execution {
 }
 
 func (exec *Execution) Execute(blk *core.Block, txs []*core.Transaction) (
-	*core.BlockCommit, []*core.TxCommit,
-) {
+	*core.BlockCommit, []*core.TxCommit) {
 	bexe := &blkExecutor{
 		txTimeout:       exec.config.TxExecTimeout,
 		concurrentLimit: exec.config.ConcurrentLimit,
