@@ -119,6 +119,7 @@ func MakePeers(keys []*core.PrivateKey, pointAddrs, topicAddrs []multiaddr.Multi
 			PubKey:    keys[i].PublicKey().Bytes(),
 			PointAddr: pointAddrs[i].String(),
 			TopicAddr: topicAddrs[i].String(),
+			Name:      fmt.Sprintf("%d", i),
 		}
 	}
 	return vlds
@@ -132,9 +133,9 @@ func SetupTemplateDir(dir string, keys []*core.PrivateKey, vlds []node.Peer, Wor
 		return err
 	}
 	genesis := &node.Genesis{
-		Workers: make([]string, 0, 0),
-		Voters:  make([]string, 0, 0),
-		Weights: make([]int, 0, 0),
+		Workers: make([]string, 0),
+		Voters:  make([]string, 0),
+		Weights: make([]int, 0),
 	}
 
 	workers := PickUniqueRandoms(len(keys), int(float32(len(keys))*WorkerProportion), true)

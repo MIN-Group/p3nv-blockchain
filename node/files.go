@@ -6,6 +6,7 @@ package node
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -20,6 +21,7 @@ type Peer struct {
 	PubKey    []byte
 	PointAddr string
 	TopicAddr string
+	Name      string
 }
 
 type Genesis struct {
@@ -84,7 +86,11 @@ func readPeers(datadir string) ([]*p2p.Peer, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid multiaddr %w", err)
 		}
+		if r.Name == "" {
+			return nil, errors.New("name can not be empty")
+		}
 		peers[i] = p2p.NewPeer(pubKey, pointAddr, topicAddr)
+		peers[i].SetName(r.Name)
 	}
 	return peers, nil
 }

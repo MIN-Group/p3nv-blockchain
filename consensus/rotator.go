@@ -124,7 +124,9 @@ func (rot *rotator) changeView() {
 	rot.state.setLeaderIndex(leaderIdx)
 	rot.setPendingViewChange(true)
 	rot.setViewStart()
-	leader := rot.resources.VldStore.GetWorker(rot.state.getLeaderIndex())
+	idx := rot.state.getLeaderIndex()
+	leader := rot.resources.VldStore.GetWorker(idx)
+	rot.resources.Host.SetLeader(idx)
 	rot.resources.MsgSvc.SendNewView(leader, rot.hotstuff.GetQCHigh().(*hsQC).qc)
 	logger.I().Infow("view changed",
 		"leader", leaderIdx, "qc", qcRefHeight(rot.hotstuff.GetQCHigh()))

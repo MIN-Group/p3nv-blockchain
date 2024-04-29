@@ -39,10 +39,11 @@ const (
 // Peer type
 type Peer struct {
 	pubKey    *core.PublicKey
+	name      string
 	pointAddr ma.Multiaddr
 	topicAddr ma.Multiaddr
-	status    PeerStatus
 
+	status  PeerStatus
 	rwc     io.ReadWriteCloser
 	emitter *emitter.Emitter
 
@@ -78,6 +79,14 @@ func (p *Peer) PointAddr() ma.Multiaddr {
 	return p.pointAddr
 }
 
+func (p *Peer) SetName(name string) {
+	p.name = name
+}
+
+func (p *Peer) Name() string {
+	return p.name
+}
+
 func (p *Peer) Status() PeerStatus {
 	p.mtxStatus.RLock()
 	defer p.mtxStatus.RUnlock()
@@ -105,7 +114,9 @@ func (p *Peer) reconnectAfterInterval() {
 		(time.Duration(rand.Intn(500)) * time.Millisecond)
 
 	time.AfterFunc(reconnInterval, func() {
-		p.host.ConnectPeer(p)
+		if p.host != nil {
+			p.host.ConnectPeer()
+		}
 	})
 }
 

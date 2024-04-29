@@ -139,14 +139,17 @@ func (node *Node) setupHost() {
 	pointAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", node.config.PointPort))
 	topicAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", node.config.TopicPort))
 	host, err := p2p.NewHost(node.privKey, pointAddr, topicAddr)
+	host.SetPeers(node.peers)
 	if err != nil {
 		logger.I().Fatalw("cannot create p2p host", "error", err)
 	}
 	for i, p := range node.peers {
-		if !p.PublicKey().Equal(node.privKey.PublicKey()) {
+		if p.PublicKey().Equal(node.privKey.PublicKey()) {
+			host.SetName(p.Name())
+		} else {
 			host.AddPeer(p)
 			if i == 0 {
-				host.ConnectPeer(p)
+				host.SetLeader(i)
 			}
 		}
 	}
@@ -170,6 +173,7 @@ func (node *Node) setupConsensus() {
 		VldStore:  node.vldStore,
 		Storage:   node.storage,
 		MsgSvc:    node.msgSvc,
+		Host:      node.host,
 		TxPool:    node.txpool,
 		Execution: node.execution,
 	}, node.config.ConsensusConfig)

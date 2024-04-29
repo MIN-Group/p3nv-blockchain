@@ -7,6 +7,7 @@ package consensus
 import (
 	"github.com/wooyang2018/ppov-blockchain/core"
 	"github.com/wooyang2018/ppov-blockchain/emitter"
+	"github.com/wooyang2018/ppov-blockchain/p2p"
 	"github.com/wooyang2018/ppov-blockchain/storage"
 	"github.com/wooyang2018/ppov-blockchain/txpool"
 )
@@ -64,6 +65,7 @@ type Resources struct {
 	VldStore  core.ValidatorStore
 	Storage   Storage
 	MsgSvc    MsgService
+	Host      *p2p.Host
 	TxPool    TxPool
 	Execution Execution
 }

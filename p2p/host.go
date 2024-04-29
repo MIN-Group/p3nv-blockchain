@@ -28,10 +28,13 @@ const protocolID = "/point2point"
 
 type Host struct {
 	privKey   *core.PrivateKey
+	name      string
 	peerStore *PeerStore
+	peers     []*Peer
 
-	pointAddr multiaddr.Multiaddr
-	pointHost host.Host
+	pointAddr  multiaddr.Multiaddr
+	pointHost  host.Host
+	consLeader *Peer
 
 	topicAddr multiaddr.Multiaddr
 	topicHost host.Host
@@ -111,19 +114,34 @@ func (host *Host) JoinChatRoom() error {
 	return nil
 }
 
-func (host *Host) ConnectPeer(peer *Peer) error {
+func (host *Host) SetPeers(peers []*Peer) {
+	host.peers = peers
+}
+
+func (host *Host) SetName(name string) {
+	host.name = name
+}
+
+func (host *Host) SetLeader(idx int) {
+	host.consLeader = host.peers[idx]
+	host.ConnectPeer()
+}
+
+func (host *Host) ConnectPeer() {
+	leader := host.consLeader
 	// prevent simultaneous connections from both hosts
-	if err := peer.setConnecting(); err != nil {
-		return err
+	if err := leader.setConnecting(); err != nil {
+		logger.I().Error(err)
+		return
 	}
-	s, err := host.newStream(peer)
+	s, err := host.newStream(leader)
 	if err != nil {
-		peer.disconnect()
-		logger.I().Errorw("failed to reconnect peer", "error", err)
-		return err
+		leader.disconnect()
+		logger.I().Errorw("failed to reconnect leader", "error", err)
+		return
 	}
-	peer.onConnected(s)
-	return nil
+	leader.onConnected(s)
+	return
 }
 
 func (host *Host) SubscribeMsg() *emitter.Subscription {
