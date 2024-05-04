@@ -61,7 +61,7 @@ func Run(config Config) {
 }
 
 func (node *Node) limitCPUs() {
-	if consensus.PreserveTxFlag {
+	if consensus.PreserveTxFlag && !consensus.GenerateTxFlag {
 		runtime.GOMAXPROCS(MaxProcsNum)
 		logger.I().Debugf("setup node to use %d out of %d CPUs",
 			runtime.GOMAXPROCS(0), runtime.NumCPU())
@@ -143,14 +143,11 @@ func (node *Node) setupHost() {
 	if err != nil {
 		logger.I().Fatalw("cannot create p2p host", "error", err)
 	}
-	for i, p := range node.peers {
+	for _, p := range node.peers {
 		if p.PublicKey().Equal(node.privKey.PublicKey()) {
 			host.SetName(p.Name())
 		} else {
 			host.AddPeer(p)
-			if i == 0 {
-				host.SetLeader(i)
-			}
 		}
 	}
 	if err = host.JoinChatRoom(); err != nil {

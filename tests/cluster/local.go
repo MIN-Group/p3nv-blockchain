@@ -20,14 +20,14 @@ import (
 )
 
 type LocalFactoryParams struct {
-	BinPath          string
-	WorkDir          string
-	NodeCount        int
-	WorkerProportion float32
-	VoterProportion  float32
-	SetupDocker      bool
+	BinPath     string
+	WorkDir     string
+	NodeCount   int
+	WorkerCount int
+	VoterCount  int
 
-	NodeConfig node.Config
+	SetupDocker bool
+	NodeConfig  node.Config
 }
 
 type LocalFactory struct {
@@ -66,7 +66,7 @@ func (ftry *LocalFactory) setup() (err error) {
 	}
 	keys := MakeRandomKeys(ftry.params.NodeCount)
 	peers := MakePeers(keys, pointAddrs, topicAddrs)
-	return SetupTemplateDir(ftry.templateDir, keys, peers, ftry.params.WorkerProportion, ftry.params.VoterProportion)
+	return SetupTemplateDir(ftry.templateDir, keys, peers, ftry.params.WorkerCount, ftry.params.VoterCount)
 }
 
 func (ftry *LocalFactory) makeDockerAddrs() ([]multiaddr.Multiaddr, []multiaddr.Multiaddr, error) {

@@ -124,10 +124,12 @@ func (host *Host) SetName(name string) {
 
 func (host *Host) SetLeader(idx int) {
 	host.consLeader = host.peers[idx]
-	host.ConnectPeer()
+	if host.consLeader.name != host.name {
+		host.ConnectLeader()
+	}
 }
 
-func (host *Host) ConnectPeer() {
+func (host *Host) ConnectLeader() {
 	leader := host.consLeader
 	// prevent simultaneous connections from both hosts
 	if err := leader.setConnecting(); err != nil {
@@ -149,6 +151,7 @@ func (host *Host) SubscribeMsg() *emitter.Subscription {
 }
 
 func (host *Host) newStream(peer *Peer) (network.Stream, error) {
+	logger.I().Debugw("newing stream to peer", "nodekey", peer.PublicKey())
 	id, err := getIDFromPublicKey(peer.PublicKey())
 	if err != nil {
 		return nil, err

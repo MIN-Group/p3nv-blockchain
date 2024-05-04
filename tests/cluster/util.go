@@ -125,7 +125,7 @@ func MakePeers(keys []*core.PrivateKey, pointAddrs, topicAddrs []multiaddr.Multi
 	return vlds
 }
 
-func SetupTemplateDir(dir string, keys []*core.PrivateKey, vlds []node.Peer, WorkerProportion, VoterProportion float32) error {
+func SetupTemplateDir(dir string, keys []*core.PrivateKey, vlds []node.Peer, WorkerCount, VoterCount int) error {
 	if err := os.RemoveAll(dir); err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func SetupTemplateDir(dir string, keys []*core.PrivateKey, vlds []node.Peer, Wor
 		Weights: make([]int, 0),
 	}
 
-	workers := PickUniqueRandoms(len(keys), int(float32(len(keys))*WorkerProportion), true)
+	workers := PickUniqueRandoms(len(keys), WorkerCount, true)
 	fmt.Printf("Setup workers: %v\n", workers)
 	for _, v := range workers {
 		genesis.Workers = append(genesis.Workers, keys[v].PublicKey().String())
@@ -148,14 +148,14 @@ func SetupTemplateDir(dir string, keys []*core.PrivateKey, vlds []node.Peer, Wor
 	// Ensure that the node is either a Worker or a Voter
 	var voters []int
 	unselectedIndexes := GetUnselectedIndexes(len(keys), workers)
-	if len(unselectedIndexes) <= int(float32(len(keys))*VoterProportion) {
+	if len(unselectedIndexes) <= VoterCount {
 		voters = append(voters, unselectedIndexes...)
-		indexes := PickUniqueRandoms(len(workers), int(float32(len(keys))*VoterProportion)-len(unselectedIndexes), true)
+		indexes := PickUniqueRandoms(len(workers), VoterCount-len(unselectedIndexes), true)
 		for _, v := range indexes {
 			voters = append(voters, workers[v])
 		}
 	} else {
-		indexes := PickUniqueRandoms(len(unselectedIndexes), int(float32(len(keys))*VoterProportion), true)
+		indexes := PickUniqueRandoms(len(unselectedIndexes), VoterCount, true)
 		for _, v := range indexes {
 			voters = append(voters, unselectedIndexes[v])
 		}

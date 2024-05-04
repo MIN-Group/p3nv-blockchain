@@ -4,6 +4,7 @@
 /tests/ppovcoin
 /tests/workdir
 /tests/seedemu/output
+/tests/seedemu/__pycache__
 /docs
 
 ***/.DS_Store

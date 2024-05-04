@@ -37,7 +37,7 @@ func setupTwoHost(t *testing.T) (*Host, *Host, *Peer, *Peer) {
 	host1.AddPeer(peer2)
 	host2.AddPeer(peer1)
 
-	assert.NoError(host1.ConnectPeer(peer2))
+	assert.NoError(host1.ConnectLeader(peer2))
 
 	assert.NoError(host1.JoinChatRoom())
 	assert.NoError(host2.JoinChatRoom())
@@ -132,13 +132,13 @@ func TestAddPeer(t *testing.T) {
 	priv3 := core.GenerateKey(nil)
 	peer3 := NewPeer(priv3.PublicKey(), peer2.pointAddr, peer2.topicAddr)
 	host1.AddPeer(peer3) // invalid key
-	assert.Error(host1.ConnectPeer(peer3))
+	assert.Error(host1.ConnectLeader(peer3))
 	assert.Equal(PeerStatusDisconnected, peer3.Status())
 
 	pointAddr3, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/25003")
 	topicAddr3, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/26003")
 	peer3 = NewPeer(priv3.PublicKey(), pointAddr3, topicAddr3)
 	host2.AddPeer(peer3) // not reachable host
-	assert.Error(host2.ConnectPeer(peer3))
+	assert.Error(host2.ConnectLeader(peer3))
 	assert.Equal(PeerStatusDisconnected, peer3.Status())
 }

@@ -22,10 +22,10 @@ import (
 )
 
 var (
-	WorkDir                  = "./workdir"
-	NodeCount                = 8
-	WorkerProportion float32 = 1
-	VoterProportion  float32 = 1
+	WorkDir     = "./workdir"
+	NodeCount   = 4
+	WorkerCount = min(NodeCount/2, 8)
+	VoterCount  = NodeCount
 
 	LoadTxPerSec    = 10   // tps for client to submit tx during functional testing
 	LoadJobPerTick  = 1000 // num of tasks to be completed per tick
@@ -297,13 +297,13 @@ func buildPPoVCoinBinCC() {
 
 func makeLocalClusterFactory() *cluster.LocalFactory {
 	ftry, err := cluster.NewLocalFactory(cluster.LocalFactoryParams{
-		BinPath:          "./chain",
-		WorkDir:          path.Join(WorkDir, "local-clusters"),
-		NodeCount:        NodeCount,
-		WorkerProportion: WorkerProportion,
-		VoterProportion:  VoterProportion,
-		SetupDocker:      OnlySetupDocker,
-		NodeConfig:       getNodeConfig(),
+		BinPath:     "./chain",
+		WorkDir:     path.Join(WorkDir, "local-clusters"),
+		NodeCount:   NodeCount,
+		WorkerCount: WorkerCount,
+		VoterCount:  VoterCount,
+		SetupDocker: OnlySetupDocker,
+		NodeConfig:  getNodeConfig(),
 	})
 	check(err)
 	return ftry
@@ -311,16 +311,16 @@ func makeLocalClusterFactory() *cluster.LocalFactory {
 
 func makeRemoteClusterFactory() *cluster.RemoteFactory {
 	ftry, err := cluster.NewRemoteFactory(cluster.RemoteFactoryParams{
-		BinPath:          "./chain",
-		WorkDir:          path.Join(WorkDir, "remote-clusters"),
-		NodeCount:        NodeCount,
-		WorkerProportion: WorkerProportion,
-		VoterProportion:  VoterProportion,
-		NodeConfig:       getNodeConfig(),
-		KeySSH:           RemoteKeySSH,
-		HostsPath:        RemoteHostsPath,
-		SetupRequired:    RemoteSetupRequired,
-		InstallRequired:  RemoteInstallRequired,
+		BinPath:         "./chain",
+		WorkDir:         path.Join(WorkDir, "remote-clusters"),
+		NodeCount:       NodeCount,
+		WorkerCount:     WorkerCount,
+		VoterCount:      VoterCount,
+		NodeConfig:      getNodeConfig(),
+		KeySSH:          RemoteKeySSH,
+		HostsPath:       RemoteHostsPath,
+		SetupRequired:   RemoteSetupRequired,
+		InstallRequired: RemoteInstallRequired,
 	})
 	check(err)
 	return ftry

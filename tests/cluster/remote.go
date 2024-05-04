@@ -20,17 +20,16 @@ import (
 )
 
 type RemoteFactoryParams struct {
-	BinPath          string
-	WorkDir          string
-	NodeCount        int
-	WorkerProportion float32
-	VoterProportion  float32
+	BinPath     string
+	WorkDir     string
+	NodeCount   int
+	WorkerCount int
+	VoterCount  int
 
 	NodeConfig node.Config
 
-	KeySSH    string
-	HostsPath string // file path to host ip addresses
-
+	KeySSH          string
+	HostsPath       string // file path to host ip addresses
 	SetupRequired   bool
 	InstallRequired bool
 }
@@ -111,7 +110,7 @@ func (ftry *RemoteFactory) setup() error {
 	}
 	keys := MakeRandomKeys(ftry.params.NodeCount)
 	peers := MakePeers(keys, pointAddrs, topicAddrs)
-	if err := SetupTemplateDir(ftry.templateDir, keys, peers, ftry.params.WorkerProportion, ftry.params.VoterProportion); err != nil {
+	if err := SetupTemplateDir(ftry.templateDir, keys, peers, ftry.params.WorkerCount, ftry.params.VoterCount); err != nil {
 		return err
 	}
 	if err := ftry.setupRemoteServers(); err != nil {

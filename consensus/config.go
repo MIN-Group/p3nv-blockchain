@@ -51,7 +51,7 @@ var DefaultConfig = Config{
 	VoteBatchLimit:  -1, // set to -1 to adapt to the number of worker nodes
 	TxWaitTime:      1 * time.Second,
 	BatchWaitTime:   3 * time.Second,
-	ProposeTimeout:  5 * time.Second,
+	ProposeTimeout:  10 * time.Second,
 	BlockDelay:      1 * time.Second,
 	ViewWidth:       60 * time.Second,
 	LeaderTimeout:   20 * time.Second,
