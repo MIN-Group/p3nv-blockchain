@@ -229,7 +229,7 @@ func (ftry *RemoteFactory) SetupCluster(name string) (*Cluster, error) {
 			host:          ftry.hosts[i],
 		}
 		node.config.DataDir = path.Join(ftry.workDirs[i], name)
-		node.config.ConsensusConfig.BenchmarkPath = path.Join(node.config.DataDir, "consensus.csv")
+		node.config.ConsensusConfig.BenchmarkPath = node.config.DataDir
 		node.config.PointPort = node.config.PointPort + i
 		node.config.TopicPort = node.config.TopicPort + i
 		node.config.APIPort = node.config.APIPort + i

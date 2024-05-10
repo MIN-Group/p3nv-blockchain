@@ -151,7 +151,7 @@ func (host *Host) SubscribeMsg() *emitter.Subscription {
 }
 
 func (host *Host) newStream(peer *Peer) (network.Stream, error) {
-	logger.I().Debugw("newing stream to peer", "nodekey", peer.PublicKey())
+	logger.I().Debugw("newing stream to peer", "pubkey", peer.PublicKey())
 	id, err := getIDFromPublicKey(peer.PublicKey())
 	if err != nil {
 		return nil, err
@@ -161,8 +161,8 @@ func (host *Host) newStream(peer *Peer) (network.Stream, error) {
 }
 
 func (host *Host) AddPeer(peer *Peer) {
+	host.peerStore.Store(peer)
 	peer.host = host
-	peer, _ = host.peerStore.LoadOrStore(peer)
 }
 
 func (host *Host) PeerStore() *PeerStore {

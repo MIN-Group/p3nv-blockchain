@@ -1,6 +1,10 @@
 package consensus
 
 import (
+	"encoding/csv"
+	"math/rand"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -12,6 +16,11 @@ type voterState struct {
 	batchQ         []*core.BatchHeader //待投票的Batch队列
 	voteBatchLimit int
 	mtxState       sync.RWMutex
+
+	writer  *csv.Writer
+	index   int
+	preTime int64
+	txCount int
 }
 
 func newVoterState() *voterState {
@@ -27,10 +36,15 @@ func (v *voterState) setVoteBatchLimit(voteBatchLimit int) *voterState {
 	return v
 }
 
-func (v *voterState) addBatch(batch *core.BatchHeader) {
+func (v *voterState) addBatch(batch *core.BatchHeader, widx int, txs int) {
+	t1 := time.Now().UnixNano()
+	v.saveItem(widx, t1, txs)
+
 	v.mtxState.Lock()
 	defer v.mtxState.Unlock()
-	v.batchQ = append(v.batchQ, batch)
+	if rand.Intn(100) < 95 {
+		v.batchQ = append(v.batchQ, batch)
+	}
 	if PreserveTxFlag && len(v.batchQ) > 3*v.voteBatchLimit {
 		v.batchQ = v.batchQ[1:]
 	}
@@ -64,6 +78,48 @@ func (v *voterState) popBatchHeaders() []*core.BatchHeader {
 	}
 	v.batchQ = v.batchQ[len(res):]
 	return res
+}
+
+func (v *voterState) newTester(file *os.File) {
+	if file == nil {
+		return
+	}
+	v.writer = csv.NewWriter(file)
+	v.writer.Write([]string{
+		"Index",
+		"Proposer",
+		"ReceiveTime",
+		"TxCount",
+		"Lambda",
+	})
+}
+
+func (v *voterState) saveItem(widx int, t1 int64, txs int) {
+	if v.writer == nil {
+		return
+	}
+	if v.preTime == 0 {
+		v.preTime = t1
+	}
+	v.txCount += txs
+
+	var lambda float64
+	if v.index%20 == 0 && v.index != 0 {
+		elapsed := t1 - v.preTime
+		lambda = float64(v.txCount) * 1e9 / float64(elapsed)
+		v.preTime = t1
+		v.txCount = 0
+	}
+
+	v.writer.Write([]string{
+		strconv.Itoa(v.index),
+		strconv.Itoa(widx),
+		strconv.FormatInt(t1, 10),
+		strconv.Itoa(txs),
+		strconv.FormatFloat(lambda, 'f', 2, 64),
+	})
+	v.index++
+	v.writer.Flush()
 }
 
 type leaderState struct {

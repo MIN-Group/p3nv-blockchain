@@ -160,20 +160,20 @@ func (pm *pacemaker) newBatch() {
 
 	signer := pm.resources.Signer
 	batch := core.NewBatch().SetTransactions(txs).SetTimestamp(time.Now().UnixNano()).Sign(signer)
+	widx := pm.resources.VldStore.GetWorkerIndex(signer.PublicKey())
+	txCount := len(batch.Header().Transactions())
+	logger.I().Debugw("generated batch", "worker", widx, "txs", txCount)
+
 	if VoteBatchFlag {
 		if pm.state.isThisNodeVoter() {
-			pm.voterState.addBatch(batch.Header())
+			pm.voterState.addBatch(batch.Header(), widx, txCount)
 		}
 		pm.resources.MsgSvc.BroadcastBatch(batch)
 	} else {
 		if pm.state.isThisNodeLeader() {
-			pm.voterState.addBatch(batch.Header())
+			pm.voterState.addBatch(batch.Header(), widx, txCount)
 		}
 		leader := pm.resources.VldStore.GetWorker(pm.state.getLeaderIndex())
 		pm.resources.MsgSvc.SendBatch(leader, batch)
 	}
-
-	widx := pm.resources.VldStore.GetWorkerIndex(signer.PublicKey())
-	logger.I().Debugw("generated batch", "worker", widx,
-		"txs", len(batch.Header().Transactions()))
 }

@@ -132,7 +132,7 @@ func (ftry *LocalFactory) SetupCluster(name string) (*Cluster, error) {
 			node.config.APIPort = node.config.APIPort + i
 			node.config.DataDir = path.Join(clusterDir, strconv.Itoa(i))
 		}
-		node.config.ConsensusConfig.BenchmarkPath = path.Join(node.config.DataDir, "consensus.csv")
+		node.config.ConsensusConfig.BenchmarkPath = node.config.DataDir
 		nodes[i] = node
 	}
 

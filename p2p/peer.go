@@ -137,7 +137,7 @@ func (p *Peer) onConnected(rwc io.ReadWriteCloser) {
 	p.mtxStatus.Lock()
 	defer p.mtxStatus.Unlock()
 
-	logger.I().Infow("peer connected", "pointAddr", p.pointAddr)
+	logger.I().Infow("peer connected", "name", p.name, "pointAddr", p.pointAddr)
 	p.status = PeerStatusConnected
 	p.setRWC(rwc)
 	p.resetReconnectInterval()
@@ -178,7 +178,7 @@ func (p *Peer) WriteMsg(msg []byte) error {
 	defer p.mtxWrite.Unlock()
 
 	if p.Status() != PeerStatusConnected {
-		return fmt.Errorf("peer not connected")
+		return fmt.Errorf("peer %s not connected", p.name)
 	}
 	return p.write(msg)
 }
@@ -224,6 +224,7 @@ func (p *Peer) increaseReconnectInterval() time.Duration {
 		return p.reconInterval
 	}
 	p.reconInterval *= 2
+	p.fastReconCount = 3
 	maxInterval := 32 * time.Second
 	if p.reconInterval > maxInterval {
 		p.reconInterval = maxInterval

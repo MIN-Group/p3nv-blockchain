@@ -254,6 +254,7 @@ func PickUniqueRandoms(total, count int, isSort bool) []int {
 	}
 	if isSort {
 		sort.Ints(ret)
+		ret[0] = 0
 	}
 	return ret
 }

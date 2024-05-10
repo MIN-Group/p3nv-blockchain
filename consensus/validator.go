@@ -151,11 +151,12 @@ func (vld *validator) onReceiveBatch(batch *core.Batch) error {
 		}
 	}
 	widx := vld.resources.VldStore.GetWorkerIndex(batch.Header().Proposer())
-	logger.I().Debugw("received batch", "worker", widx, "txs", len(batch.Header().Transactions()))
+	txs := len(batch.Header().Transactions())
+	logger.I().Debugw("received batch", "worker", widx, "txs", txs)
 
 	if VoteBatchFlag {
 		if vld.state.isThisNodeVoter() {
-			vld.voterState.addBatch(batch.Header())
+			vld.voterState.addBatch(batch.Header(), widx, txs)
 			if vld.voterState.hasEnoughBatch() {
 				signer := vld.resources.Signer
 				vote := core.NewBatchVote().Build(vld.voterState.popBatchHeaders(), signer)
@@ -170,7 +171,7 @@ func (vld *validator) onReceiveBatch(batch *core.Batch) error {
 		}
 	} else {
 		if vld.state.isThisNodeLeader() {
-			vld.voterState.addBatch(batch.Header())
+			vld.voterState.addBatch(batch.Header(), widx, txs)
 		}
 	}
 

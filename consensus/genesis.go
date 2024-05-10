@@ -184,7 +184,7 @@ func (gns *genesis) onReceiveProposal(proposal *core.Block) error {
 		return fmt.Errorf("genesis block with txs")
 	}
 	gns.setB0(proposal)
-	logger.I().Infow("got genesis block, voting...")
+	logger.I().Infow("got genesis block, voting...", "proposer", gns.resources.VldStore.GetWorkerIndex(proposal.Proposer()))
 	return gns.resources.MsgSvc.SendVote(proposal.Proposer(), proposal.Vote(gns.resources.Signer))
 }
 

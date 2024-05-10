@@ -23,8 +23,8 @@ import (
 
 var (
 	WorkDir     = "./workdir"
-	NodeCount   = 4
-	WorkerCount = min(NodeCount/2, 8)
+	NodeCount   = 32
+	WorkerCount = min(NodeCount/2, 16)
 	VoterCount  = NodeCount
 
 	LoadTxPerSec    = 10   // tps for client to submit tx during functional testing
@@ -61,8 +61,8 @@ func getNodeConfig() node.Config {
 	config.Debug = true
 	config.BroadcastTx = BroadcastTx
 	if !CheckRotation {
-		config.ConsensusConfig.ViewWidth = 1 * time.Hour
-		config.ConsensusConfig.LeaderTimeout = 1 * time.Hour
+		config.ConsensusConfig.ViewWidth = 24 * time.Hour
+		config.ConsensusConfig.LeaderTimeout = 24 * time.Hour
 	}
 	return config
 }

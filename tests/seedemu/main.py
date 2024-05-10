@@ -7,7 +7,7 @@ from seedemu import *
 from blockchain import PPoV
 
 # Dimension of hypercube topology
-dimension = 2
+dimension = 5
 
 # Initialize the emulator and layers
 emu = Emulator()
@@ -26,7 +26,7 @@ for i in range(0, 2 ** dimension - 1):
         diff = i ^ j
         if diff == 1 << (diff.bit_length() - 1):
             as150.createNetwork(
-                'net' + bin(i).replace('0b', '').zfill(dimension) + '-' + bin(j).replace('0b', '').zfill(dimension))
+                bin(i).replace('0b', '').zfill(dimension) + '-' + bin(j).replace('0b', '').zfill(dimension))
 
 docker = Docker(internetMapEnabled=True)
 image = DockerImage(name='chain_bin', local=True, software=[])

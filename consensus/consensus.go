@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"path"
 	"strconv"
 	"time"
 
@@ -68,7 +69,7 @@ func (cons *Consensus) start() {
 	}
 	if cons.config.BenchmarkPath != "" {
 		var err error
-		cons.logfile, err = os.Create(cons.config.BenchmarkPath)
+		cons.logfile, err = os.Create(path.Join(cons.config.BenchmarkPath, "consensus.csv"))
 		if err != nil {
 			logger.I().Warnf("create benchmark log file failed, %+v", err.Error())
 		}
@@ -150,6 +151,13 @@ func (cons *Consensus) setupPPovState() {
 		cons.config.VoteBatchLimit = cons.resources.VldStore.WorkerCount()
 	}
 	cons.voterState.setVoteBatchLimit(cons.config.VoteBatchLimit)
+	if cons.config.BenchmarkPath != "" {
+		file, err := os.Create(path.Join(cons.config.BenchmarkPath, "batch.csv"))
+		if err != nil {
+			logger.I().Warnf("create batch log file failed, %+v", err.Error())
+		}
+		cons.voterState.newTester(file)
+	}
 
 	cons.leaderState = newLeaderState()
 	cons.leaderState.setBatchSignLimit(cons.resources.VldStore.MajorityVoterCount())
