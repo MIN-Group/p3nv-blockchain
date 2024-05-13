@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"encoding/csv"
-	"math/rand"
 	"os"
 	"strconv"
 	"sync"
@@ -42,9 +41,7 @@ func (v *voterState) addBatch(batch *core.BatchHeader, widx int, txs int) {
 
 	v.mtxState.Lock()
 	defer v.mtxState.Unlock()
-	if rand.Intn(100) < 95 {
-		v.batchQ = append(v.batchQ, batch)
-	}
+	v.batchQ = append(v.batchQ, batch)
 	if PreserveTxFlag && len(v.batchQ) > 3*v.voteBatchLimit {
 		v.batchQ = v.batchQ[1:]
 	}
@@ -109,6 +106,7 @@ func (v *voterState) saveItem(widx int, t1 int64, txs int) {
 		lambda = float64(v.txCount) * 1e9 / float64(elapsed)
 		v.preTime = t1
 		v.txCount = 0
+		v.writer.Flush()
 	}
 
 	v.writer.Write([]string{
@@ -119,7 +117,6 @@ func (v *voterState) saveItem(widx int, t1 int64, txs int) {
 		strconv.FormatFloat(lambda, 'f', 2, 64),
 	})
 	v.index++
-	v.writer.Flush()
 }
 
 type leaderState struct {

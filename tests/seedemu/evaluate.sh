@@ -3,7 +3,7 @@
 script_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 cd "$script_path"
 
-dimension=5
+dimension=6
 count=4
 
 rm -rf result/dimension_$dimension/

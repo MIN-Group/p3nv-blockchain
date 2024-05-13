@@ -23,8 +23,8 @@ import (
 
 var (
 	WorkDir     = "./workdir"
-	NodeCount   = 32
-	WorkerCount = min(NodeCount/2, 16)
+	NodeCount   = 64
+	WorkerCount = NodeCount / 2
 	VoterCount  = NodeCount
 
 	LoadTxPerSec    = 10   // tps for client to submit tx during functional testing
