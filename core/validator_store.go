@@ -25,13 +25,11 @@ type ValidatorStore interface {
 	GetWorker(idx int) *PublicKey         //获取指定索引的记账节点
 	GetVoterIndex(pubKey *PublicKey) int  //获取指定公钥的投票节点的索引
 	GetWorkerIndex(pubKey *PublicKey) int //获取指定公钥的记账节点的索引
-	GetWorkerWeight(idx int) int          //获取指定索引的记账节点权重
 }
 
 type validatorStore struct {
 	voters  []*PublicKey //投票节点列表
 	workers []*PublicKey //记账节点列表
-	weights []int        //记账节点权重列表
 
 	vcount    int //投票节点收集区块的阈值
 	voterMap  map[string]int
@@ -51,11 +49,7 @@ func StringToPubKey(v string) *PublicKey {
 	return pubKey
 }
 
-func NewValidatorStore(workers []string, weights []int, voters []string) ValidatorStore {
-	store := &validatorStore{
-		weights: weights,
-	}
-
+func NewValidatorStore(workers []string, voters []string) ValidatorStore {
 	set := make(map[string]*PublicKey)
 	for _, v := range workers {
 		set[v] = StringToPubKey(v)
@@ -66,6 +60,7 @@ func NewValidatorStore(workers []string, weights []int, voters []string) Validat
 		}
 	}
 
+	store := &validatorStore{}
 	store.validators = make([]*PublicKey, 0, len(set))
 	for _, v := range set {
 		store.validators = append(store.validators, v)
@@ -160,13 +155,6 @@ func (store *validatorStore) GetWorkerIndex(pubKey *PublicKey) int {
 		return 0
 	}
 	return store.workerMap[pubKey.String()]
-}
-
-func (store *validatorStore) GetWorkerWeight(idx int) int {
-	if idx >= len(store.weights) || idx < 0 {
-		return -1
-	}
-	return store.weights[idx]
 }
 
 // MajorityCount returns 2f + 1 members

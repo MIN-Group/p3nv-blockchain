@@ -135,14 +135,12 @@ func SetupTemplateDir(dir string, keys []*core.PrivateKey, vlds []node.Peer, Wor
 	genesis := &node.Genesis{
 		Workers: make([]string, 0),
 		Voters:  make([]string, 0),
-		Weights: make([]int, 0),
 	}
 
 	workers := PickUniqueRandoms(len(keys), WorkerCount, true)
 	fmt.Printf("Setup workers: %v\n", workers)
 	for _, v := range workers {
 		genesis.Workers = append(genesis.Workers, keys[v].PublicKey().String())
-		genesis.Weights = append(genesis.Weights, 1)
 	}
 
 	// Ensure that the node is either a Worker or a Voter

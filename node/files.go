@@ -26,7 +26,6 @@ type Peer struct {
 
 type Genesis struct {
 	Workers []string // 记账节点列表
-	Weights []int    // 记账节点权重列表
 	Voters  []string // 投票节点列表
 }
 
@@ -56,9 +55,6 @@ func readGenesis(datadir string) (*Genesis, error) {
 		return nil, fmt.Errorf("cannot parse %s, %w", GenesisFile, err)
 	}
 
-	if len(genesis.Weights) != len(genesis.Workers) {
-		return nil, fmt.Errorf("cannot parse %s, %s", GenesisFile, "the weights must be the same length as the workers")
-	}
 	return genesis, nil
 }
 

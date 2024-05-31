@@ -232,6 +232,7 @@ func (svc *MsgService) setTopicReceivers() {
 	svc.topicReceivers = make(map[MsgType]topicReceiver)
 	svc.topicReceivers[MsgTypeBatch] = svc.onReceiveBatch2
 	svc.topicReceivers[MsgTypeProposal] = svc.onReceiveProposal2
+	svc.topicReceivers[MsgTypeTxList] = svc.onReceiveTxList2
 	svc.topicReceivers[MsgTypeNewView] = svc.onReceiveNewView2
 }
 
@@ -338,6 +339,15 @@ func (svc *MsgService) onReceiveTxList(peer *Peer, data []byte) {
 	txList := core.NewTxList()
 	if err := txList.Unmarshal(data); err != nil {
 		logger.I().Errorw("receive tx list failed", "error", err)
+		return
+	}
+	svc.txListEmitter.Emit(txList)
+}
+
+func (svc *MsgService) onReceiveTxList2(data []byte) {
+	txList := core.NewTxList()
+	if err := txList.Unmarshal(data); err != nil {
+		logger.I().Errorw("receive topic tx list failed", "error", err)
 		return
 	}
 	svc.txListEmitter.Emit(txList)

@@ -114,6 +114,15 @@ func (host *Host) JoinChatRoom() error {
 	return nil
 }
 
+func (host *Host) Close() {
+	if err := host.pointHost.Close(); err != nil {
+		logger.I().Error(err)
+	}
+	if err := host.topicHost.Close(); err != nil {
+		logger.I().Error(err)
+	}
+}
+
 func (host *Host) SetPeers(peers []*Peer) {
 	host.peers = peers
 }
@@ -124,7 +133,7 @@ func (host *Host) SetName(name string) {
 
 func (host *Host) SetLeader(idx int) {
 	host.consLeader = host.peers[idx]
-	if host.consLeader.name != host.name {
+	if !host.consLeader.pubKey.Equal(host.privKey.PublicKey()) {
 		host.ConnectLeader()
 	}
 }

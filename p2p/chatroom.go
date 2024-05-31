@@ -13,7 +13,7 @@ import (
 	"github.com/wooyang2018/ppov-blockchain/logger"
 )
 
-var topicName = "blockchain"
+var topicName = "chatroom"
 
 // ChatRoom represents a subscription to a single PubSub topic. Messages
 // can be published to the topic with ChatRoom.Publish, and received
@@ -63,10 +63,6 @@ func (cr *ChatRoom) Publish(message ChatMessage) error {
 	return cr.topic.Publish(cr.ctx, message)
 }
 
-func (cr *ChatRoom) ListPeers() []peer.ID {
-	return cr.ps.ListPeers(topicName)
-}
-
 // readLoop pulls messages from the pubsub topic and pushes them onto the emitter.Emitter.
 func (cr *ChatRoom) readLoop() {
 	for {
@@ -84,7 +80,8 @@ func (cr *ChatRoom) readLoop() {
 
 func (cr *ChatRoom) printLoop() {
 	for range time.Tick(60 * time.Second) {
-		logger.I().Infof("chatroom has %d connections", len(cr.ListPeers()))
+		peers := cr.ps.ListPeers(topicName)
+		logger.I().Infof("chatroom has %d connections", len(peers))
 	}
 }
 
@@ -104,12 +101,11 @@ func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
 		logger.I().Warnw("found invalid peer", "peerID", pi.ID)
 		return
 	}
-
 	count := 5
-	for i := 0; i < count; i++ {
+	for i := 1; i <= count; i++ {
 		if err := n.h.Connect(context.Background(), pi); err != nil {
 			logger.I().Error(err)
-			time.Sleep(5 * time.Second)
+			time.Sleep(time.Duration(i) * time.Second)
 		} else {
 			break
 		}
