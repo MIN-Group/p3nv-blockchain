@@ -7,7 +7,7 @@ from seedemu import *
 from blockchain import PPoV
 
 # Dimension of hypercube topology
-dimension = 6
+dimension = 5
 
 # Initialize the emulator and layers
 emu = Emulator()

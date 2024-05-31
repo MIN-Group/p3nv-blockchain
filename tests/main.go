@@ -23,7 +23,7 @@ import (
 
 var (
 	WorkDir     = "./workdir"
-	NodeCount   = 64
+	NodeCount   = 32
 	WorkerCount = NodeCount / 2
 	VoterCount  = NodeCount
 

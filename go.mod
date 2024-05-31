@@ -123,3 +123,5 @@ require (
 	golang.org/x/tools v0.14.0 // indirect
 	lukechampine.com/blake3 v1.2.1 // indirect
 )
+
+replace github.com/libp2p/go-libp2p-pubsub v0.10.0 => github.com/zhuohuashiyi/go-libp2p-pubsub v1.0.0

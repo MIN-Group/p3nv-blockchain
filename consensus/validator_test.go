@@ -20,7 +20,7 @@ func TestValidator_verifyProposalToVote(t *testing.T) {
 		priv1.PublicKey().String(),
 	}
 	resources := &Resources{
-		VldStore: core.NewValidatorStore(keys, []int{1, 1}, keys),
+		VldStore: core.NewValidatorStore(keys, keys),
 	}
 	mStrg := new(MockStorage)
 	mTxPool := new(MockTxPool)

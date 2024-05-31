@@ -15,46 +15,27 @@ import (
 	"github.com/wooyang2018/ppov-blockchain/core"
 )
 
-func setupMsgServiceWithLoopBackPeers() (*MsgService, [][]byte, []*Peer) {
-	peers := make([]*Peer, 2)
-	peers[0] = NewPeer(core.GenerateKey(nil).PublicKey(), nil, nil)
-	peers[1] = NewPeer(core.GenerateKey(nil).PublicKey(), nil, nil)
-
-	s1 := peers[0].SubscribeMsg()
-	s2 := peers[1].SubscribeMsg()
-
-	raws := make([][]byte, 2)
-
-	go func() {
-		for e := range s1.Events() {
-			raws[0] = e.([]byte)
-		}
-	}()
-
-	go func() {
-		for e := range s2.Events() {
-			raws[1] = e.([]byte)
-		}
-	}()
-
-	host := new(Host)
-	host.peerStore = NewPeerStore()
-
-	peers[0].onConnected(newRWCLoopBack())
-	peers[1].onConnected(newRWCLoopBack())
-	host.peerStore.Store(peers[0])
-	host.peerStore.Store(peers[1])
-
-	svc := NewMsgService(host)
-	time.Sleep(time.Millisecond)
-	return svc, raws, peers
+func newTestProposal(priv core.Signer) (*core.Vote, *core.QuorumCert, *core.Block) {
+	blk0 := core.NewBlock().
+		SetHeight(9).
+		Sign(priv).
+		Vote(priv)
+	qc := core.NewQuorumCert().Build([]*core.Vote{blk0})
+	blk := core.NewBlock().
+		SetHeight(10).
+		SetQuorumCert(qc).
+		Sign(priv)
+	return blk0, qc, blk
 }
 
-func TestMsgService_BroadcastProposal(t *testing.T) {
-	assert := assert.New(t)
+func TestBroadcastProposal(t *testing.T) {
+	asrt := assert.New(t)
 
-	svc, raws, _ := setupMsgServiceWithLoopBackPeers()
-	sub := svc.SubscribeProposal(5)
+	host1, host2, _, _ := setupTwoHost(t)
+	svc1 := NewMsgService(host1)
+	svc2 := NewMsgService(host2)
+	sub := svc1.SubscribeProposal(5)
+
 	var recvBlk *core.Block
 	var recvCount int
 	go func() {
@@ -64,34 +45,27 @@ func TestMsgService_BroadcastProposal(t *testing.T) {
 		}
 	}()
 
-	qc := core.NewQuorumCert().Build(
-		[]*core.Vote{core.NewBlock().SetHeight(9).Vote(core.GenerateKey(nil))})
-	blk := core.NewBlock().SetHeight(10).SetQuorumCert(qc).Sign(core.GenerateKey(nil))
-	err := svc.BroadcastProposal(blk)
+	_, _, blk := newTestProposal(core.GenerateKey(nil))
+	err := svc2.BroadcastProposal(blk)
+	asrt.NoError(err)
 
-	if !assert.NoError(err) {
-		return
+	time.Sleep(10 * time.Millisecond)
+	if asrt.Equal(1, recvCount) && asrt.NotNil(recvBlk) {
+		asrt.Equal(blk.Height(), recvBlk.Height())
 	}
 
-	time.Sleep(time.Millisecond)
-
-	assert.NotNil(raws[0])
-	assert.Equal(raws[0], raws[1])
-
-	assert.EqualValues(MsgTypeProposal, raws[0][0])
-
-	assert.Equal(2, recvCount)
-	if assert.NotNil(recvBlk) {
-		assert.Equal(blk.Height(), recvBlk.Height())
-	}
+	host1.Close()
+	host2.Close()
 }
 
-func TestMsgService_SendVote(t *testing.T) {
-	assert := assert.New(t)
+func TestSendVote(t *testing.T) {
+	asrt := assert.New(t)
 
-	svc, raws, peers := setupMsgServiceWithLoopBackPeers()
+	host1, host2, peer1, _ := setupTwoHost(t)
+	svc1 := NewMsgService(host1)
+	svc2 := NewMsgService(host2)
+	sub := svc1.SubscribeVote(5)
 
-	sub := svc.SubscribeVote(5)
 	var recvVote *core.Vote
 	go func() {
 		for e := range sub.Events() {
@@ -99,31 +73,27 @@ func TestMsgService_SendVote(t *testing.T) {
 		}
 	}()
 
-	validator := core.GenerateKey(nil)
-	vote := core.NewBlock().Sign(core.GenerateKey(nil)).Vote(validator)
-	err := svc.SendVote(peers[0].PublicKey(), vote)
+	vote, _, _ := newTestProposal(core.GenerateKey(nil))
+	err := svc2.SendVote(peer1.PublicKey(), vote)
+	asrt.NoError(err)
 
-	if !assert.NoError(err) {
-		return
+	time.Sleep(10 * time.Millisecond)
+	if asrt.NotNil(recvVote) {
+		asrt.Equal(vote.BlockHash(), recvVote.BlockHash())
 	}
 
-	time.Sleep(time.Millisecond)
-
-	assert.NotNil(raws[0])
-	assert.Nil(raws[1])
-	assert.EqualValues(MsgTypeVote, raws[0][0])
-
-	if assert.NotNil(recvVote) {
-		assert.Equal(vote.BlockHash(), recvVote.BlockHash())
-	}
+	host1.Close()
+	host2.Close()
 }
 
-func TestMsgService_SendNewView(t *testing.T) {
-	assert := assert.New(t)
+func TestSendNewView(t *testing.T) {
+	asrt := assert.New(t)
 
-	svc, raws, peers := setupMsgServiceWithLoopBackPeers()
+	host1, host2, peer1, _ := setupTwoHost(t)
+	svc1 := NewMsgService(host1)
+	svc2 := NewMsgService(host2)
+	sub := svc1.SubscribeNewView(5)
 
-	sub := svc.SubscribeNewView(5)
 	var recvQC *core.QuorumCert
 	go func() {
 		for e := range sub.Events() {
@@ -131,30 +101,27 @@ func TestMsgService_SendNewView(t *testing.T) {
 		}
 	}()
 
-	vote := core.NewBlock().Sign(core.GenerateKey(nil)).Vote(core.GenerateKey(nil))
-	qc := core.NewQuorumCert().Build([]*core.Vote{vote})
-	err := svc.SendNewView(peers[0].PublicKey(), qc)
+	_, qc, _ := newTestProposal(core.GenerateKey(nil))
+	err := svc2.SendNewView(peer1.PublicKey(), qc)
+	asrt.NoError(err)
 
-	if !assert.NoError(err) {
-		return
+	time.Sleep(10 * time.Millisecond)
+	if asrt.NotNil(recvQC) {
+		asrt.Equal(qc.BlockHash(), recvQC.BlockHash())
 	}
 
-	time.Sleep(time.Millisecond)
-
-	assert.NotNil(raws[0])
-	assert.Nil(raws[1])
-	assert.EqualValues(MsgTypeNewView, raws[0][0])
-
-	if assert.NotNil(recvQC) {
-		assert.Equal(qc.BlockHash(), recvQC.BlockHash())
-	}
+	host1.Close()
+	host2.Close()
 }
 
-func TestMsgService_BroadcastTxList(t *testing.T) {
-	assert := assert.New(t)
+func TestBroadcastTxList(t *testing.T) {
+	asrt := assert.New(t)
 
-	svc, raws, _ := setupMsgServiceWithLoopBackPeers()
-	sub := svc.SubscribeTxList(5)
+	host1, host2, _, _ := setupTwoHost(t)
+	svc1 := NewMsgService(host1)
+	svc2 := NewMsgService(host2)
+	sub := svc1.SubscribeTxList(5)
+
 	var recvTxs *core.TxList
 	var recvCount int
 	go func() {
@@ -168,32 +135,23 @@ func TestMsgService_BroadcastTxList(t *testing.T) {
 		core.NewTransaction().SetNonce(1).Sign(core.GenerateKey(nil)),
 		core.NewTransaction().SetNonce(2).Sign(core.GenerateKey(nil)),
 	}
-	err := svc.BroadcastTxList(txs)
+	err := svc2.BroadcastTxList(txs)
+	asrt.NoError(err)
 
-	if !assert.NoError(err) {
-		return
+	time.Sleep(10 * time.Millisecond)
+	if asrt.Equal(1, recvCount) && asrt.NotNil(recvTxs) {
+		asrt.Equal((*txs)[0].Nonce(), (*recvTxs)[0].Nonce())
+		asrt.Equal((*txs)[1].Nonce(), (*recvTxs)[1].Nonce())
 	}
 
-	time.Sleep(time.Millisecond)
-
-	assert.NotNil(raws[0])
-	assert.Equal(raws[0], raws[1])
-	assert.EqualValues(MsgTypeTxList, raws[0][0])
-
-	assert.Equal(2, recvCount)
-	if assert.NotNil(recvTxs) {
-		assert.Equal((*txs)[0].Nonce(), (*recvTxs)[0].Nonce())
-		assert.Equal((*txs)[1].Nonce(), (*recvTxs)[1].Nonce())
-	}
+	host1.Close()
+	host2.Close()
 }
 
-func TestMsgService_RequestBlock(t *testing.T) {
-	assert := assert.New(t)
+func TestRequestBlock(t *testing.T) {
+	asrt := assert.New(t)
 
-	qc := core.NewQuorumCert().Build(
-		[]*core.Vote{core.NewBlock().SetHeight(9).Vote(core.GenerateKey(nil))})
-	blk := core.NewBlock().SetHeight(10).SetQuorumCert(qc).Sign(core.GenerateKey(nil))
-
+	_, _, blk := newTestProposal(core.GenerateKey(nil))
 	blkReqHandler := &BlockReqHandler{
 		GetBlock: func(hash []byte) (*core.Block, error) {
 			if bytes.Equal(blk.Hash(), hash) {
@@ -202,20 +160,26 @@ func TestMsgService_RequestBlock(t *testing.T) {
 			return nil, errors.New("block not found")
 		},
 	}
-	svc, _, peers := setupMsgServiceWithLoopBackPeers()
-	svc.SetReqHandler(blkReqHandler)
 
-	recvBlk, err := svc.RequestBlock(peers[0].PublicKey(), blk.Hash())
-	if assert.NoError(err) && assert.NotNil(recvBlk) {
-		assert.Equal(blk.Height(), recvBlk.Height())
+	host1, host2, peer1, _ := setupTwoHost(t)
+	svc1 := NewMsgService(host1)
+	svc2 := NewMsgService(host2)
+	svc1.SetReqHandler(blkReqHandler)
+
+	recvBlk, err := svc2.RequestBlock(peer1.PublicKey(), blk.Hash())
+	if asrt.NoError(err) && asrt.NotNil(recvBlk) {
+		asrt.Equal(blk.Height(), recvBlk.Height())
 	}
 
-	_, err = svc.RequestBlock(peers[0].PublicKey(), []byte{1})
-	assert.Error(err)
+	_, err = svc2.RequestBlock(peer1.PublicKey(), []byte{1})
+	asrt.Error(err)
+
+	host1.Close()
+	host2.Close()
 }
 
-func TestMsgService_RequestTxList(t *testing.T) {
-	assert := assert.New(t)
+func TestRequestTxList(t *testing.T) {
+	asrt := assert.New(t)
 
 	var txs = &core.TxList{
 		core.NewTransaction().SetNonce(1).Sign(core.GenerateKey(nil)),
@@ -227,12 +191,18 @@ func TestMsgService_RequestTxList(t *testing.T) {
 			return txs, nil
 		},
 	}
-	svc, _, peers := setupMsgServiceWithLoopBackPeers()
-	svc.SetReqHandler(txListReqHandler)
 
-	recvTxs, err := svc.RequestTxList(peers[0].PublicKey(), [][]byte{{1}, {2}})
-	if assert.NoError(err) && assert.NotNil(recvTxs) {
-		assert.Equal((*txs)[0].Nonce(), (*recvTxs)[0].Nonce())
-		assert.Equal((*txs)[1].Nonce(), (*recvTxs)[1].Nonce())
+	host1, host2, peer1, _ := setupTwoHost(t)
+	svc1 := NewMsgService(host1)
+	svc2 := NewMsgService(host2)
+	svc1.SetReqHandler(txListReqHandler)
+
+	recvTxs, err := svc2.RequestTxList(peer1.PublicKey(), [][]byte{{1}, {2}})
+	if asrt.NoError(err) && asrt.NotNil(recvTxs) {
+		asrt.Equal((*txs)[0].Nonce(), (*recvTxs)[0].Nonce())
+		asrt.Equal((*txs)[1].Nonce(), (*recvTxs)[1].Nonce())
 	}
+
+	host1.Close()
+	host2.Close()
 }

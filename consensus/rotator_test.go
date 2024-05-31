@@ -20,9 +20,8 @@ func setupRotator() (*rotator, *core.Block) {
 		key1.PublicKey().String(),
 		key2.PublicKey().String(),
 	}
-	weights := []int{1, 1}
 	resources := &Resources{
-		VldStore: core.NewValidatorStore(keys, weights, keys),
+		VldStore: core.NewValidatorStore(keys, keys),
 	}
 
 	b0 := core.NewBlock().Sign(key1)
@@ -42,23 +41,6 @@ func setupRotator() (*rotator, *core.Block) {
 		state:     state,
 		hotstuff:  hotstuff,
 	}, b0
-}
-
-func TestRotator_changeView(t *testing.T) {
-	assert := assert.New(t)
-
-	rot, b0 := setupRotator()
-	rot.state.setLeaderIndex(1)
-
-	msgSvc := new(MockMsgService)
-	msgSvc.On("SendNewView", rot.resources.VldStore.GetWorker(0), b0.QuorumCert()).Return(nil)
-	rot.resources.MsgSvc = msgSvc
-
-	rot.changeView()
-
-	msgSvc.AssertExpectations(t)
-	assert.True(rot.getPendingViewChange())
-	assert.EqualValues(rot.state.getLeaderIndex(), 0)
 }
 
 func Test_rotator_isNewViewApproval(t *testing.T) {

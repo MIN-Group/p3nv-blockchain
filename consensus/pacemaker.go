@@ -64,8 +64,8 @@ func (pm *pacemaker) batchRun() {
 }
 
 func (pm *pacemaker) run() {
-	//subQC := pm.hotstuff.SubscribeNewQCHigh()
-	//defer subQC.Unsubscribe()
+	subQC := pm.hotstuff.SubscribeNewQCHigh()
+	defer subQC.Unsubscribe()
 	for {
 		blkDelayT := pm.nextBlockDelay()
 		pm.newBlock()
@@ -77,7 +77,7 @@ func (pm *pacemaker) run() {
 
 		// either beatdelay timeout or I'm able to create qc
 		case <-beatT.C:
-			//case <-subQC.Events():
+		case <-subQC.Events():
 		}
 		beatT.Stop()
 

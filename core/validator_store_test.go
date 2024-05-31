@@ -85,11 +85,6 @@ func (m *MockValidatorStore) GetWorkerIndex(pubKey *PublicKey) int {
 	return args.Int(0)
 }
 
-func (m *MockValidatorStore) GetWorkerWeight(idx int) int {
-	args := m.Called(idx)
-	return args.Int(0)
-}
-
 func TestMajorityCount(t *testing.T) {
 	type args struct {
 		validatorCount int

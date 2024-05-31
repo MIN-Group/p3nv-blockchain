@@ -36,7 +36,7 @@ func TestHsDriver_TestMajorityCount(t *testing.T) {
 		core.GenerateKey(nil).PublicKey().String(),
 		core.GenerateKey(nil).PublicKey().String(),
 	}
-	hsd.resources.VldStore = core.NewValidatorStore(validators, []int{1, 1, 1, 1}, validators)
+	hsd.resources.VldStore = core.NewValidatorStore(validators, validators)
 
 	res := hsd.MajorityValidatorCount()
 
@@ -57,7 +57,7 @@ func TestHsDriver_CreateLeaf(t *testing.T) {
 	hsd.resources.Storage = storage
 
 	signer := core.GenerateKey(nil)
-	hsd.resources.VldStore = core.NewValidatorStore([]string{signer.PublicKey().String()}, []int{1}, []string{signer.PublicKey().String()})
+	hsd.resources.VldStore = core.NewValidatorStore([]string{signer.PublicKey().String()}, []string{signer.PublicKey().String()})
 
 	tx1, tx2 := []byte("tx1"), []byte("tx2")
 	txsInQ := [][]byte{tx1, tx2}
@@ -73,7 +73,7 @@ func TestHsDriver_CreateLeaf(t *testing.T) {
 		hsd.leaderState.addBatchVote(batchVote)
 	} else {
 		hsd.voterState = newVoterState().setVoteBatchLimit(1)
-		hsd.voterState.addBatch(batch)
+		hsd.voterState.addBatch(batch, 0, len(batch.Transactions()))
 	}
 
 	txpool := new(MockTxPool)
@@ -110,7 +110,7 @@ func TestHsDriver_VoteBlock(t *testing.T) {
 	blk := core.NewBlock().Sign(proposer)
 
 	validators := []string{blk.Proposer().String()}
-	hsd.resources.VldStore = core.NewValidatorStore(validators, []int{1}, validators)
+	hsd.resources.VldStore = core.NewValidatorStore(validators, validators)
 
 	txPool := new(MockTxPool)
 	txPool.On("GetStatus").Return(txpool.Status{}) // no txs in the pool

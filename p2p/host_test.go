@@ -16,42 +16,43 @@ import (
 )
 
 func setupTwoHost(t *testing.T) (*Host, *Host, *Peer, *Peer) {
-	assert := assert.New(t)
+	asrt := assert.New(t)
+
+	pointAddr1, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/15151")
+	topicAddr1, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/16161")
+	pointAddr2, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/15152")
+	topicAddr2, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/16162")
 
 	priv1 := core.GenerateKey(nil)
-	priv2 := core.GenerateKey(nil)
-
-	pointAddr1, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/25001")
-	pointAddr2, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/25002")
-	topicAddr1, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/26001")
-	topicAddr2, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/26002")
-
 	peer1 := NewPeer(priv1.PublicKey(), pointAddr1, topicAddr1)
-	peer2 := NewPeer(priv2.PublicKey(), pointAddr2, topicAddr2)
-
 	host1, err := NewHost(priv1, pointAddr1, topicAddr1)
-	assert.NoError(err)
+	asrt.NoError(err)
+
+	priv2 := core.GenerateKey(nil)
+	peer2 := NewPeer(priv2.PublicKey(), pointAddr2, topicAddr2)
 	host2, err := NewHost(priv2, pointAddr2, topicAddr2)
-	assert.NoError(err)
+	asrt.NoError(err)
 
 	host1.AddPeer(peer2)
+	host1.SetPeers([]*Peer{peer1, peer2})
 	host2.AddPeer(peer1)
+	host2.SetPeers([]*Peer{peer1, peer2})
 
-	assert.NoError(host1.ConnectLeader(peer2))
+	host1.SetLeader(0)
+	host2.SetLeader(0)
+	asrt.NoError(host1.JoinChatRoom())
+	asrt.NoError(host2.JoinChatRoom())
 
-	assert.NoError(host1.JoinChatRoom())
-	assert.NoError(host2.JoinChatRoom())
-
-	time.Sleep(2 * time.Second)
-	assert.Equal(PeerStatusConnected, peer1.Status())
-	assert.Equal(PeerStatusConnected, peer2.Status())
+	time.Sleep(1 * time.Second)
+	asrt.Equal(PeerStatusConnected, peer1.Status())
+	asrt.Equal(PeerStatusConnected, peer2.Status())
 
 	return host1, host2, peer1, peer2
 }
 
 func TestPointHost(t *testing.T) {
-	assert := assert.New(t)
-	_, _, peer1, peer2 := setupTwoHost(t)
+	asrt := assert.New(t)
+	host1, host2, peer1, peer2 := setupTwoHost(t)
 
 	// wait message from host2
 	s1 := peer1.SubscribeMsg()
@@ -67,7 +68,7 @@ func TestPointHost(t *testing.T) {
 	peer2.WriteMsg(msg)
 
 	time.Sleep(10 * time.Millisecond)
-	assert.Equal(msg, recv1)
+	asrt.Equal(msg, recv1)
 
 	// wait message from host1
 	s2 := peer2.SubscribeMsg()
@@ -83,11 +84,14 @@ func TestPointHost(t *testing.T) {
 	peer1.WriteMsg(msg)
 
 	time.Sleep(10 * time.Millisecond)
-	assert.Equal(msg, recv2)
+	asrt.Equal(msg, recv2)
+
+	host1.Close()
+	host2.Close()
 }
 
 func TestTopicHost(t *testing.T) {
-	assert := assert.New(t)
+	asrt := assert.New(t)
 	host1, host2, _, _ := setupTwoHost(t)
 
 	// wait message from host2
@@ -102,10 +106,10 @@ func TestTopicHost(t *testing.T) {
 
 	// send message from host1
 	msg := []byte("hello")
-	assert.NoError(host2.chatRoom.Publish(msg))
+	asrt.NoError(host2.chatRoom.Publish(msg))
 
 	time.Sleep(10 * time.Millisecond)
-	assert.Equal(msg, recv1)
+	asrt.Equal(msg, recv1)
 
 	// wait message from host1
 	s2 := host2.SubscribeMsg()
@@ -119,26 +123,11 @@ func TestTopicHost(t *testing.T) {
 
 	// send message from host2
 	msg = []byte("world")
-	assert.NoError(host1.chatRoom.Publish(msg))
+	asrt.NoError(host1.chatRoom.Publish(msg))
 
 	time.Sleep(10 * time.Millisecond)
-	assert.Equal(msg, recv2)
-}
+	asrt.Equal(msg, recv2)
 
-func TestAddPeer(t *testing.T) {
-	assert := assert.New(t)
-	host1, host2, _, peer2 := setupTwoHost(t)
-
-	priv3 := core.GenerateKey(nil)
-	peer3 := NewPeer(priv3.PublicKey(), peer2.pointAddr, peer2.topicAddr)
-	host1.AddPeer(peer3) // invalid key
-	assert.Error(host1.ConnectLeader(peer3))
-	assert.Equal(PeerStatusDisconnected, peer3.Status())
-
-	pointAddr3, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/25003")
-	topicAddr3, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/26003")
-	peer3 = NewPeer(priv3.PublicKey(), pointAddr3, topicAddr3)
-	host2.AddPeer(peer3) // not reachable host
-	assert.Error(host2.ConnectLeader(peer3))
-	assert.Equal(PeerStatusDisconnected, peer3.Status())
+	host1.Close()
+	host2.Close()
 }

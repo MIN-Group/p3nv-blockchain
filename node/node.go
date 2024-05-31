@@ -58,6 +58,7 @@ func Run(config Config) {
 	<-c
 	logger.I().Info("node killed")
 	node.consensus.Stop()
+	node.host.Close()
 }
 
 func (node *Node) limitCPUs() {
@@ -122,7 +123,7 @@ func (node *Node) setupComponents() {
 }
 
 func (node *Node) setupValidatorStore() {
-	node.vldStore = core.NewValidatorStore(node.genesis.Workers, node.genesis.Weights, node.genesis.Voters)
+	node.vldStore = core.NewValidatorStore(node.genesis.Workers, node.genesis.Voters)
 }
 
 func (node *Node) setupStorage() {
